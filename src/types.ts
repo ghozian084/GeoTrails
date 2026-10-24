@@ -57,3 +57,11 @@ export interface GroupState {
 export interface Trail {
   posts: Post[];
 }
+
+/** Teacher settings kept on this laptop. */
+export interface TeacherSettings {
+  /** Hash of the local teacher PIN; null until one is set. */
+  pinHash: string | null;
+  /** Demo mode: every post is open without finishing Pos 0. */
+  demo: boolean;
+}

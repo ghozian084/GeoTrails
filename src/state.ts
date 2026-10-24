@@ -1,6 +1,6 @@
 import { POSTS } from "./data/posts";
 import { gateDone, totalScore } from "./logic/score";
-import { save } from "./store";
+import { loadTeacher, save } from "./store";
 import type { GroupState } from "./types";
 
 /** The active group's session; null until the start screen is done. */
@@ -12,5 +12,9 @@ export const posts = POSTS;
 export const S = (): GroupState => session.S!;
 
 export const persist = (): void => save(session.S);
-export const isGateDone = (): boolean => gateDone(S().posts);
+/** Teacher settings for this laptop (PIN hash, demo mode). Mutated and saved by the teacher panel. */
+export const teacher = loadTeacher();
+
+/** Posts 1–5 are open once Pos 0 is done, or always in demo mode. */
+export const isGateDone = (): boolean => teacher.demo || gateDone(S().posts);
 export const total = (): number => totalScore(S().posts);

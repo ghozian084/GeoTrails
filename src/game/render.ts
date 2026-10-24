@@ -37,6 +37,8 @@ export interface Frame {
   path: Pt[];
   posts: Post[];
   S: GroupState | null;
+  /** Demo mode: all posts open. */
+  unlocked: boolean;
   now: number;
 }
 
@@ -49,7 +51,7 @@ function worldFor(T: number, DPR: number) {
 }
 
 export function draw(f: Frame): void {
-  const { ctx, W, H, T, DPR, cam, av, path, posts, S, now } = f;
+  const { ctx, W, H, T, DPR, cam, av, path, posts, S, unlocked, now } = f;
   const rr = (x: number, y: number, w: number, h: number, r: number) => {
     ctx.beginPath();
     if (typeof ctx.roundRect === "function") ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
@@ -86,7 +88,7 @@ export function draw(f: Frame): void {
   // penanda pos
   const pulse = (Math.sin(now / 320) + 1) / 2;
   posts.forEach((p, i) => {
-    const st = S ? S.posts[i] : null; const locked = !S || (i > 0 && !gateDone(S.posts));
+    const st = S ? S.posts[i] : null; const locked = !S || (i > 0 && !unlocked && !gateDone(S.posts));
     const mx = cx(p.tile[0]), my = cx(p.tile[1]) - T * .62, R = T * .34;
     const col = st && st.result === "green" ? C.good : st && st.result === "orange" ? C.warn : locked ? C.lock : C.accent;
     if (!locked && !(st && st.result)) { ctx.strokeStyle = C.tape; ctx.globalAlpha = .9 - .6 * pulse; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(mx, my, R + 3 + pulse * T * .22, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }

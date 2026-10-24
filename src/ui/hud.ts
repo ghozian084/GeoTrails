@@ -1,8 +1,9 @@
-import { isGateDone, posts, S, total } from "../state";
+import { isGateDone, posts, S, session, total } from "../state";
 import type { Post } from "../types";
 import { $, esc } from "./dom";
 
 export function updateHud(): void {
+  if (!session.S) return;
   $("score").textContent = String(total());
   $("dots").innerHTML = S().posts
     .map((p, i) => `<span class="${p.result || (i === 0 || isGateDone() ? "open" : "")}" title="Pos ${i}: ${esc(posts[i].title)}">${i}</span>`)

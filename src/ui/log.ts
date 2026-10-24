@@ -4,6 +4,7 @@ import { session, isGateDone, posts, S, total } from "../state";
 import { clearSaved } from "../store";
 import { $, esc, fmt, toast } from "./dom";
 import { allDone, openFinish } from "./finish";
+import { openTeacher } from "./teacher";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 const csv = () => toCsv(S(), posts);
@@ -22,9 +23,10 @@ export function openLog(): void {
   $("log").innerHTML = `<h2>Log ${esc(S().name)}</h2><p class="sub">Total ${total()} poin · ${S().posts.filter((p) => p.result).length}/6 pos selesai</p>
    <div class="tblwrap"><table><thead><tr><th>Pos</th><th>Objek</th><th>Hasil</th><th style="text-align:right">Jawaban</th><th style="text-align:right">Coba</th><th style="text-align:right">Petunjuk</th><th style="text-align:right">Durasi</th><th style="text-align:right">Poin</th><th style="text-align:right">Fisik</th><th style="text-align:right">Selisih</th></tr></thead><tbody>${rows}</tbody></table></div>
    <textarea id="csvBox" readonly aria-label="Data CSV">${esc(csv())}</textarea>
-   <div class="row"><button class="btn primary" id="copyBtn">Salin CSV</button><button class="btn" id="dlBtn">Unduh .csv</button><small id="copyMsg"></small><span class="spacer"></span>${allDone() ? `<button class="btn" id="reflBtn">Refleksi</button>` : ""}<button class="btn ghost" id="resetBtn">Mulai ulang</button><button class="btn" id="closeLog">Tutup</button></div>`;
+   <div class="row"><button class="btn primary" id="copyBtn">Salin CSV</button><button class="btn" id="dlBtn">Unduh .csv</button><small id="copyMsg"></small><span class="spacer"></span>${allDone() ? `<button class="btn" id="reflBtn">Refleksi</button>` : ""}<button class="btn ghost" id="logTeach">Mode guru</button><button class="btn ghost" id="resetBtn">Mulai ulang</button><button class="btn" id="closeLog">Tutup</button></div>`;
   $("logOv").hidden = false;
   $("closeLog").onclick = () => ($("logOv").hidden = true);
+  $("logTeach").onclick = () => { $("logOv").hidden = true; openTeacher(); };
   const rb = document.getElementById("reflBtn");
   if (rb) rb.onclick = () => { $("logOv").hidden = true; openFinish(); };
   $("copyBtn").onclick = () => {

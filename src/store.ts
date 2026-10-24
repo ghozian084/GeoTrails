@@ -1,5 +1,5 @@
 import { START } from "./data/map";
-import type { GroupState, Post } from "./types";
+import type { GroupState, Post, TeacherSettings } from "./types";
 
 /*
  * Persistence. Only the group name, avatar colour and trail progress (answers, worksheet notes,
@@ -47,4 +47,19 @@ export function loadSaved(postCount: number): GroupState | null {
 
 export function clearSaved(): void {
   try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
+}
+
+export const TEACHER_KEY = "geotrails.guru";
+
+export function loadTeacher(): TeacherSettings {
+  try {
+    const v = JSON.parse(localStorage.getItem(TEACHER_KEY) || "null");
+    return { pinHash: typeof v?.pinHash === "string" ? v.pinHash : null, demo: v?.demo === true };
+  } catch {
+    return { pinHash: null, demo: false };
+  }
+}
+
+export function saveTeacher(t: TeacherSettings): void {
+  try { localStorage.setItem(TEACHER_KEY, JSON.stringify(t)); } catch { /* storage unavailable */ }
 }

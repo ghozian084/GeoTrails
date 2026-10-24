@@ -5,7 +5,7 @@ export const esc = (s: unknown): string =>
 
 export const fmt = (v: number | null, d = 2): string => Number(v).toLocaleString("id-ID", { maximumFractionDigits: d });
 
-export const modalOpen = (): boolean => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden;
+export const modalOpen = (): boolean => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden || !$("teachOv").hidden;
 
 let toastT: ReturnType<typeof setTimeout> | undefined;
 export function toast(m: string): void {

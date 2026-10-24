@@ -156,6 +156,41 @@ textarea{width:100%;min-height:110px;font:500 12px var(--f-mono);border:1px soli
 .log .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
 .log .row small{color:var(--muted)}
 .finish{max-width:560px;padding:26px}
+/* Teacher panel */
+.start-foot{justify-content:space-between;align-items:center}
+.demo-badge{font:700 11px var(--f-mono);letter-spacing:.06em;background:var(--tape);color:var(--tape-ink);padding:3px 8px;border-radius:5px}
+.teach{max-width:900px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.teach-head{display:flex;align-items:center;gap:10px}
+.teach-head h2{font-family:var(--f-display);font-size:26px;margin:0}
+.teach-head .x{background:none;border:none;font-size:26px;line-height:1;color:var(--muted);padding:0 4px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabs button{border:none;background:none;color:var(--muted);font-weight:700;font-size:14px;padding:8px 12px;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.teach-body{display:grid;gap:14px}
+.teach-body .sub{color:var(--muted);margin:0}
+.teach input:not([type=checkbox]):not([type=file]),.teach select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);min-width:0}
+.teach textarea{margin:0;min-height:60px;font:400 14px/1.45 var(--f-body)}
+.teach .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.teach small{color:var(--muted);font-size:13px}
+.pin{display:grid;gap:4px;max-width:360px}
+.pin p{margin:0 0 10px}
+.pin-msg{color:var(--bad);font-size:14px;min-height:1.4em}
+.pin-help{margin-top:12px;font-size:14px;color:var(--muted)}
+.pin-help summary{cursor:pointer}
+.key-card{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:8px}
+.key-card h3{margin:0;font-family:var(--f-display);font-size:18px;display:flex;gap:8px;align-items:center}
+.key-card .chip{font:700 12px var(--f-mono);background:var(--tape);color:var(--tape-ink);padding:3px 8px;border-radius:5px}
+.key-card .task{font-size:15px}
+.key-card dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0;font-size:14px}
+.key-card dt{color:var(--muted)}
+.key-card dd{margin:0}
+.key-card dd.num{font-family:var(--f-mono)}
+.key-card td{white-space:normal;vertical-align:top}
+.set{display:grid;gap:8px;border:1px solid var(--line);border-radius:10px;padding:14px}
+.set h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.set p{margin:0}
+.check{display:flex;gap:8px;align-items:center;font-weight:700}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
 .finish .big{font:700 56px var(--f-mono);color:var(--accent);line-height:1;margin:10px 0}
 .finish ol{padding-left:20px;margin:10px 0 18px;display:grid;gap:6px}
 .refl{display:grid;gap:12px;margin:0 0 18px;padding:14px;background:var(--surface-2);border-radius:10px}

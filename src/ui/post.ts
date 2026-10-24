@@ -37,7 +37,7 @@ export function closePost(): void {
 
 export function closeAll(): void {
   if (!$("postOv").hidden) closePost();
-  $("logOv").hidden = true; $("finOv").hidden = true;
+  $("logOv").hidden = true; $("finOv").hidden = true; $("teachOv").hidden = true;
 }
 
 function renderPost(): void {
