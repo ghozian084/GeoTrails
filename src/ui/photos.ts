@@ -15,6 +15,10 @@ export interface Photo {
 
 const photos = new Map<number, Photo>();
 
+/** Folder of bundled photos relative to the page (the 3D page lives one level deeper). */
+let bundledBase = "posts/";
+export const setBundledBase = (base: string): void => { bundledBase = base; };
+
 export const photoFor = (id: number): Photo | undefined => photos.get(id);
 
 const measure = (url: string): Promise<{ w: number; h: number } | null> =>
@@ -37,7 +41,7 @@ async function load(id: number): Promise<void> {
       URL.revokeObjectURL(url);
     }
   } catch { /* IndexedDB unavailable: fall through to the bundled photo */ }
-  const url = `posts/pos-${id}.jpg`, size = await measure(url);
+  const url = `${bundledBase}pos-${id}.jpg`, size = await measure(url);
   if (size) photos.set(id, { url, ...size, source: "bundled" });
 }
 
