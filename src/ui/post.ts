@@ -7,6 +7,7 @@ import type { Zone } from "../types";
 import { $, esc, fmt, toast } from "./dom";
 import { maybeFinish } from "./finish";
 import { updateHud } from "./hud";
+import { calcHtml, mountCalc } from "./calculator";
 import { mountPano } from "./panorama";
 import { SCENES } from "./scenes";
 
@@ -54,7 +55,7 @@ function renderPost(): void {
   }
   const value = done ? esc(fmt(st.answer)) : (st.attempts.length && lastFb && lastFb.id === id ? esc(fmt(st.attempts[st.attempts.length - 1])) : "");
   $("post").innerHTML = `
-    <div class="media">${media}<div class="cap"><span>Ilustrasi pengganti foto · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div>
+    <div class="media"><div class="media-in">${media}<div class="cap"><span>Ilustrasi pengganti foto · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div></div>
     <div class="body">
       <header><span class="chip">POS ${p.id}</span><h2 id="ptitle">${esc(p.title)}</h2><button class="x" id="xBtn" aria-label="Tutup">×</button></header>
       <div class="concept">${esc(p.concept)}</div>
@@ -63,7 +64,9 @@ function renderPost(): void {
       <form class="answer" id="ansForm">
         <div class="inp"><input id="ans" inputmode="decimal" autocomplete="off" placeholder="jawabanmu" aria-label="Jawaban dalam ${esc(p.unit)}" ${done ? "disabled" : ""} value="${value}"><span class="unit">${esc(p.unit)}</span></div>
         <button class="btn primary" type="submit" ${done ? "disabled" : ""}>Periksa</button>
+        <button class="btn" type="button" id="calcBtn" aria-controls="calc">Kalkulator</button>
       </form>
+      ${calcHtml(!done)}
       ${fbHtml}
       <div class="hints">
         <h3><span>Petunjuk</span><span class="attempts">${st.attempts.length} percobaan · ${st.hints} petunjuk</span></h3>
@@ -84,6 +87,7 @@ function renderPost(): void {
   if ($("reviseBtn")) $("reviseBtn").onclick = () => { lastFb = null; renderPost(); $("ans").focus(); };
   if ($("lockBtn")) $("lockBtn").onclick = () => { st.result = "orange"; st.score = orangeScore(st.hints, free); lastFb = null; persist(); updateHud(); renderPost(); };
   $("ansForm").addEventListener("submit", (e) => { e.preventDefault(); check(); });
+  mountCalc((v) => { const i = $<HTMLInputElement>("ans"); i.value = v; i.focus(); });
   $("work").addEventListener("input", (e) => {
     st.work = (e.target as HTMLTextAreaElement).value.slice(0, WORK_MAX);
     persist();
