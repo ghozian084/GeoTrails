@@ -11,6 +11,7 @@ import { persist, posts, S, session, teacher } from "./state";
 import { $, modalOpen } from "./ui/dom";
 import { showPrompt, updateHud } from "./ui/hud";
 import { openLog } from "./ui/log";
+import { loadPhotos } from "./ui/photos";
 import { closeAll, closePost, openPost, setGame } from "./ui/post";
 import { initStart } from "./ui/start";
 import { closeTeacher, openTeacher } from "./ui/teacher";
@@ -44,5 +45,6 @@ $("postOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id 
 $("logOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "logOv") $("logOv").hidden = true; });
 $("finOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "finOv") $("finOv").hidden = true; });
 
+void loadPhotos(posts.map((p) => p.id));
 setTimeout(() => $("gname").focus(), 100);
 window.addEventListener("pagehide", () => { if (session.S) persist(); });

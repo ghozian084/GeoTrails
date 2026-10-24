@@ -3,6 +3,7 @@ import { teacher } from "../../state";
 import { saveTeacher } from "../../store";
 import { $, esc } from "../dom";
 import { renderKeys } from "./keys";
+import { renderPhotos } from "./photos";
 import { renderSettings } from "./settings";
 
 /* Teacher panel: gated by a local PIN, organised in tabs. */
@@ -15,6 +16,7 @@ export interface Tab {
 
 const TABS: Tab[] = [
   { id: "keys", label: "Kunci jawaban", render: renderKeys },
+  { id: "photos", label: "Foto pos", render: renderPhotos },
   { id: "settings", label: "Pengaturan", render: renderSettings },
 ];
 

@@ -1,6 +1,7 @@
 import type { Game } from "../game/game";
 import { closeness, CLOSENESS_MSG, percentDiff } from "../logic/compare";
 import { grade } from "../logic/grade";
+import { isPanorama } from "../logic/image";
 import { parseNumber } from "../logic/parseNumber";
 import { greenScore, HINT_COST, isFreePost, orangeScore } from "../logic/score";
 import { isGateDone, persist, posts, S } from "../state";
@@ -10,6 +11,7 @@ import { maybeFinish } from "./finish";
 import { updateHud } from "./hud";
 import { calcHtml, mountCalc } from "./calculator";
 import { mountPano } from "./panorama";
+import { photoFor } from "./photos";
 import { SCENES } from "./scenes";
 
 /** Max length of a worksheet note. */
@@ -43,9 +45,12 @@ export function closeAll(): void {
 function renderPost(): void {
   const id = cur!;
   const p = posts[id], st = S().posts[id], done = !!st.result, free = isFreePost(id);
-  const media = p.media === "pano"
+  const photo = photoFor(p.id);
+  // A wide photo becomes a panorama; without a photo the built-in illustration is used.
+  const pano = photo ? isPanorama(photo.w, photo.h) : p.media === "pano";
+  const media = pano
     ? `<div class="pano" id="pano"><span class="badge">PANORAMA 360°</span><div class="ctl"><button type="button" data-l aria-label="Putar kiri">◀</button><button type="button" data-z>Perbesar</button><button type="button" data-r aria-label="Putar kanan">▶</button></div></div>`
-    : `<div class="frame">${SCENES[p.id]()}</div>`;
+    : photo ? `<div class="frame"><img src="${esc(photo.url)}" alt="Foto ${esc(p.title)}"></div>` : `<div class="frame">${SCENES[p.id]()}</div>`;
   const hintsHtml = p.hints.slice(0, st.hints).map((h, i) => `<div class="hint"><b>P${i + 1}</b>${esc(h)}</div>`).join("");
   const canHint = st.hints < p.hints.length && !done;
   let fbHtml = "";
@@ -56,7 +61,7 @@ function renderPost(): void {
   }
   const value = done ? esc(fmt(st.answer)) : (st.attempts.length && lastFb && lastFb.id === id ? esc(fmt(st.attempts[st.attempts.length - 1])) : "");
   $("post").innerHTML = `
-    <div class="media"><div class="media-in">${media}<div class="cap"><span>Ilustrasi pengganti foto · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div></div>
+    <div class="media"><div class="media-in">${media}<div class="cap"><span>${photo ? "Foto" : "Ilustrasi pengganti foto"} · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div></div>
     <div class="body">
       <header><span class="chip">POS ${p.id}</span><h2 id="ptitle">${esc(p.title)}</h2><button class="x" id="xBtn" aria-label="Tutup">×</button></header>
       <div class="concept">${esc(p.concept)}</div>
@@ -90,7 +95,10 @@ function renderPost(): void {
       </div>
     </div>`;
   $("post").setAttribute("aria-labelledby", "ptitle");
-  if (p.media === "pano") mountPano($("pano"), SCENES[p.id](), p.focus);
+  if (pano) {
+    if (photo) mountPano($("pano"), photo.url, photo.w / photo.h, p.focus);
+    else mountPano($("pano"), "data:image/svg+xml;charset=utf-8," + encodeURIComponent(SCENES[p.id]()), 4, p.focus);
+  }
   $("xBtn").onclick = closePost;
   if ($("closeBtn")) $("closeBtn").onclick = closePost;
   if ($("hintBtn")) $("hintBtn").onclick = () => { st.hints++; persist(); renderPost(); };

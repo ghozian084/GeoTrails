@@ -24,3 +24,22 @@ describe("PIN guru", () => {
     expect(await checkPin("2468", null)).toBe(false);
   });
 });
+
+import { fitWithin, isPanorama, maxSide } from "../src/logic/image";
+
+describe("ukuran foto pos", () => {
+  it("foto lebar dianggap panorama", () => {
+    expect(isPanorama(4000, 1000)).toBe(true);
+    expect(isPanorama(2500, 1000)).toBe(true);
+    expect(isPanorama(1600, 1200)).toBe(false);
+    expect(isPanorama(100, 0)).toBe(false);
+  });
+
+  it("diperkecil sesuai sisi terpanjang, tidak diperbesar", () => {
+    expect(fitWithin(4000, 3000, 1600)).toEqual([1600, 1200]);
+    expect(fitWithin(3000, 4000, 1600)).toEqual([1200, 1600]);
+    expect(fitWithin(800, 600, 1600)).toEqual([800, 600]);
+    expect(maxSide(8000, 2000)).toBe(4096);
+    expect(maxSide(4000, 3000)).toBe(1600);
+  });
+});

@@ -63,3 +63,32 @@ export function loadTeacher(): TeacherSettings {
 export function saveTeacher(t: TeacherSettings): void {
   try { localStorage.setItem(TEACHER_KEY, JSON.stringify(t)); } catch { /* storage unavailable */ }
 }
+
+/* Teacher-uploaded post photos live in IndexedDB (too large for localStorage). */
+const DB_NAME = "geotrails", PHOTO_STORE = "photos";
+
+function openDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(PHOTO_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function photoTx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const db = await openDb();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const req = fn(db.transaction(PHOTO_STORE, mode).objectStore(PHOTO_STORE));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export const getPhoto = (id: number): Promise<Blob | undefined> => photoTx("readonly", (s) => s.get(id));
+export const putPhoto = (id: number, blob: Blob): Promise<IDBValidKey> => photoTx("readwrite", (s) => s.put(blob, id));
+export const deletePhoto = (id: number): Promise<undefined> => photoTx("readwrite", (s) => s.delete(id));

@@ -1,11 +1,10 @@
-/** Drag-to-rotate panorama: the SVG repeats horizontally as a CSS background (4:1 aspect). */
-export function mountPano(el: HTMLElement, svgStr: string, focus?: number): void {
-  const url = "url(\"data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr) + "\")";
-  el.style.backgroundImage = url;
+/** Drag-to-rotate panorama: the image repeats horizontally as a CSS background. `aspect` = width / height. */
+export function mountPano(el: HTMLElement, src: string, aspect: number, focus?: number): void {
+  el.style.backgroundImage = `url("${src}")`;
   let zoom = 1, fx = focus || .5, oy = 0;
   let drag: { x: number; y: number; fx: number; oy: number } | null = null;
   const apply = () => {
-    const h = el.clientHeight * zoom, w = h * 4;
+    const h = el.clientHeight * zoom, w = h * aspect;
     el.style.backgroundSize = `${w}px ${h}px`;
     oy = Math.min(0, Math.max(el.clientHeight - h, oy));
     const x = el.clientWidth / 2 - fx * w;
@@ -19,7 +18,7 @@ export function mountPano(el: HTMLElement, svgStr: string, focus?: number): void
   });
   el.addEventListener("pointermove", (e) => {
     if (!drag) return;
-    const w = el.clientHeight * zoom * 4;
+    const w = el.clientHeight * zoom * aspect;
     fx = drag.fx - (e.clientX - drag.x) / w; fx = ((fx % 1) + 1) % 1;
     oy = drag.oy + (e.clientY - drag.y);
     apply();
