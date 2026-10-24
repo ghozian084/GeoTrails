@@ -1,8 +1,10 @@
 import { BUILD, COLS, ROWS, tiles, TREES } from "../data/map";
 import { gateDone } from "../logic/score";
 import type { GroupState, Post } from "../types";
-import type { Cam } from "./camera";
+import { blinking, walkPose, type Dir } from "./anim";
 import type { Pt } from "./bfs";
+import type { Cam } from "./camera";
+import { SPRITE_H, SPRITE_W, spriteFrame } from "./sprite";
 
 const COLOR_KEYS = ["map-grass", "map-grass-2", "map-pave", "map-pave-line", "map-roof", "map-roof-edge", "map-label", "map-tree", "map-court", "map-shadow", "accent", "tape", "good", "warn", "lock", "ink", "surface"];
 
@@ -13,7 +15,17 @@ export function readColors(): void {
   COLOR_KEYS.forEach((k) => (C[k] = cs.getPropertyValue("--" + k).trim()));
 }
 
-export interface Avatar { x: number; y: number; px: number; py: number }
+export interface Avatar {
+  /** Target tile. */
+  x: number; y: number;
+  /** Drawn (interpolated) position. */
+  px: number; py: number;
+  dir: Dir;
+  /** Distance walked in tiles, drives the walk cycle. */
+  dist: number;
+  /** Timestamp of the last movement, so the cycle doesn't flicker between tiles. */
+  movedAt: number;
+}
 
 export interface Frame {
   ctx: CanvasRenderingContext2D;
@@ -92,11 +104,18 @@ export function draw(f: Frame): void {
   // avatar
   if (S) {
     const ax = av.px * T + T / 2, ay = av.py * T + T / 2;
-    ctx.fillStyle = C["map-shadow"]; ctx.beginPath(); ctx.ellipse(ax, ay + T * .32, T * .3, T * .11, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = S.color; ctx.beginPath(); ctx.arc(ax, ay, T * .34, 0, 7); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.stroke();
-    ctx.fillStyle = "#fff"; ctx.font = `700 ${T * .32}px "Chakra Petch",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText((S.name[0] || "?").toUpperCase(), ax, ay + 1);
-    ctx.font = `700 ${Math.max(11, T * .3)}px "Atkinson Hyperlegible",sans-serif`; const tw = ctx.measureText(S.name).width + 12;
-    ctx.fillStyle = C.surface; rr(ax - tw / 2, ay - T * .95, tw, T * .4, 6); ctx.fill(); ctx.fillStyle = C.ink; ctx.fillText(S.name, ax, ay - T * .75);
+    const moving = now - av.movedAt < 120;
+    const k = T * 1.3 / SPRITE_H, sw = SPRITE_W * k, sh = SPRITE_H * k;
+    const feet = ay + T * .42;
+    ctx.fillStyle = C["map-shadow"]; ctx.beginPath(); ctx.ellipse(ax, feet - T * .04, T * .3, T * .1, 0, 0, 7); ctx.fill();
+    const frame = spriteFrame(S.color, av.dir, walkPose(av.dist, moving), !moving && blinking(now));
+    const smooth = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(frame, ax - sw / 2, feet - sh, sw, sh);
+    ctx.imageSmoothingEnabled = smooth;
+    ctx.font = `700 ${Math.max(11, T * .3)}px "Atkinson Hyperlegible",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const tw = ctx.measureText(S.name).width + 12, ty = feet - sh - T * .26;
+    ctx.fillStyle = C.surface; rr(ax - tw / 2, ty - T * .2, tw, T * .4, 6); ctx.fill(); ctx.fillStyle = C.ink; ctx.fillText(S.name, ax, ty);
   }
   ctx.restore();
 }

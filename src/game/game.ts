@@ -1,5 +1,6 @@
 import { START, walk } from "../data/map";
 import type { GroupState, Post } from "../types";
+import { facing } from "./anim";
 import { bfs, type Pt } from "./bfs";
 import { follow, tileSize, type Cam } from "./camera";
 import { draw, readColors, type Avatar } from "./render";
@@ -47,29 +48,35 @@ export function createGame(canvas: HTMLCanvasElement, stage: HTMLElement, posts:
   window.addEventListener("resize", resize);
   resize();
 
-  const av: Avatar = { x: START[0], y: START[1], px: START[0], py: START[1] };
+  const av: Avatar = { x: START[0], y: START[1], px: START[0], py: START[1], dir: "down", dist: 0, movedAt: -1e9 };
   let path: Pt[] = [], pendingOpen: number | null = null, held: Pt | null = null, t0 = performance.now();
 
   function frame(now: number) {
     const dt = Math.min(.05, (now - t0) / 1000); t0 = now;
-    step(dt);
+    step(dt, now);
     follow(cam, av.px, av.py, T, W, H);
     draw({ ctx, W, H, T, DPR, cam, av, path, posts, S: hooks.getState(), now });
     requestAnimationFrame(frame);
   }
 
-  function step(dt: number) {
+  function step(dt: number, now: number) {
     const S = hooks.getState();
     if (!S || hooks.modalOpen()) return;
     const moving = av.px !== av.x || av.py !== av.y;
     if (moving) {
       const dx = av.x - av.px, dy = av.y - av.py, d = Math.hypot(dx, dy), m = SPEED * dt;
+      av.dir = facing(dx, dy, av.dir); av.dist += Math.min(d, m); av.movedAt = now;
       if (d <= m) { av.px = av.x; av.py = av.y; } else { av.px += dx / d * m; av.py += dy / d * m; }
       return;
     }
     if (path.length) { const [nx, ny] = path.shift()!; av.x = nx; av.y = ny; S.pos = [nx, ny]; return; }
-    if (pendingOpen != null) { const id = pendingOpen; pendingOpen = null; hooks.openPost(id); return; }
-    if (held) { const [dx, dy] = held; if (walk(av.x + dx, av.y + dy)) { av.x += dx; av.y += dy; S.pos = [av.x, av.y]; } }
+    if (pendingOpen != null) {
+      const id = pendingOpen; pendingOpen = null;
+      const p = posts.find((q) => q.id === id)!;
+      av.dir = facing(p.tile[0] - av.x, p.tile[1] - av.y, av.dir);
+      hooks.openPost(id); return;
+    }
+    if (held) { const [dx, dy] = held; av.dir = facing(dx, dy, av.dir); if (walk(av.x + dx, av.y + dy)) { av.x += dx; av.y += dy; S.pos = [av.x, av.y]; } }
     else if (Math.random() < .02) hooks.save();
     updatePrompt();
   }
@@ -114,7 +121,7 @@ export function createGame(canvas: HTMLCanvasElement, stage: HTMLElement, posts:
   requestAnimationFrame(frame);
 
   return {
-    begin(pos) { av.x = pos[0]; av.y = pos[1]; av.px = av.x; av.py = av.y; path = []; canvas.focus(); },
+    begin(pos) { av.x = pos[0]; av.y = pos[1]; av.px = av.x; av.py = av.y; av.dir = "down"; path = []; canvas.focus(); },
     stop() { held = null; path = []; },
     nearPost,
     resetPrompt() { lastPrompt = -1; },
