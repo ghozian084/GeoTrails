@@ -18,8 +18,9 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 ## Stack
 - Vite + TypeScript, tanpa framework. Peta digambar di `<canvas>`, sedangkan UI memakai DOM biasa.
 - Vitest untuk logika: parsing angka, penilaian, skor, kalkulator, CSV, rekap, validasi isi pos, sprite. Playwright untuk alur end-to-end siswa dan guru (`e2e/`), dijalankan terhadap build produksi lewat `vite preview`. Tes e2e juga memastikan tidak ada permintaan ke internet saat aplikasi dipakai.
-- `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id.
-- `npm run build:single` menghasilkan satu file HTML offline di `dist-single/index.html` dengan vite-plugin-singlefile.
+- `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id, termasuk prototipe 3D di `dist/blox/`.
+- Prototipe 3D (Blox) memakai three.js dari npm (di-bundle, tanpa CDN). Ia memakai ulang data pos, penilaian, UI, Mode guru, dan progres tersimpan dari versi 2D; hanya lapisan game yang berbeda.
+- `npm run build:single` menghasilkan satu file HTML offline versi 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
 
 ## Struktur
 ```
@@ -38,8 +39,9 @@ src/
   ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai
     teacher/           Mode guru: kunci jawaban, foto pos, isi pos, rekap kelas, pengaturan
 tests/                 Vitest
-e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, helpers.ts)
+e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, blox.spec.ts, helpers.ts)
 public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
+blox/                  prototipe 3D bergaya blok di /blox/ (index.html, main.ts, src/: game3d, world3d, avatar3d, movement, textures)
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ```
 
@@ -85,4 +87,4 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - `npm test`: Vitest
 - `npm run typecheck`: pemeriksaan TypeScript (aplikasi dan e2e)
 - `npm run build` / `npm run build:single`
-- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`.
+- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes Blox berjalan di proyek `blox` dengan WebGL perangkat lunak.
