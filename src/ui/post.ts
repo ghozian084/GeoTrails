@@ -1,4 +1,5 @@
 import type { Game } from "../game/game";
+import { closeness, CLOSENESS_MSG, percentDiff } from "../logic/compare";
 import { grade } from "../logic/grade";
 import { parseNumber } from "../logic/parseNumber";
 import { greenScore, HINT_COST, isFreePost, orangeScore } from "../logic/score";
@@ -68,6 +69,15 @@ function renderPost(): void {
       </form>
       ${calcHtml(!done)}
       ${fbHtml}
+      ${done ? `<form class="phys" id="physForm">
+        <h3><label for="phys">Fisik: hasil ukur di lapangan</label></h3>
+        <small>Saat trail fisik, ukur objek ini lalu simpan hasilnya untuk dibandingkan dengan jawaban virtualmu.</small>
+        <div class="answer">
+          <div class="inp"><input id="phys" inputmode="decimal" autocomplete="off" placeholder="hasil ukur" value="${st.physical != null ? esc(fmt(st.physical)) : ""}"><span class="unit">${esc(p.unit)}</span></div>
+          <button class="btn" type="submit">Simpan</button>
+        </div>
+        <div class="phys-out" id="physOut" aria-live="polite">${esc(physSummary(st.answer, st.physical, p.unit))}</div>
+      </form>` : ""}
       <div class="hints">
         <h3><span>Petunjuk</span><span class="attempts">${st.attempts.length} percobaan · ${st.hints} petunjuk</span></h3>
         ${hintsHtml}
@@ -87,12 +97,29 @@ function renderPost(): void {
   if ($("reviseBtn")) $("reviseBtn").onclick = () => { lastFb = null; renderPost(); $("ans").focus(); };
   if ($("lockBtn")) $("lockBtn").onclick = () => { st.result = "orange"; st.score = orangeScore(st.hints, free); lastFb = null; persist(); updateHud(); renderPost(); };
   $("ansForm").addEventListener("submit", (e) => { e.preventDefault(); check(); });
+  if (done) $("physForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const raw = $<HTMLInputElement>("phys").value.trim();
+    const v = parseNumber(raw);
+    if (raw && !(isFinite(v) && v > 0)) { $("physOut").textContent = "Tulis hasil ukur berupa angka positif, misalnya 12,4."; return; }
+    st.physical = raw ? v : null;
+    persist();
+    $("physOut").textContent = physSummary(st.answer, st.physical, p.unit);
+  });
   mountCalc((v) => { const i = $<HTMLInputElement>("ans"); i.value = v; i.focus(); });
   $("work").addEventListener("input", (e) => {
     st.work = (e.target as HTMLTextAreaElement).value.slice(0, WORK_MAX);
     persist();
     $("workMsg").textContent = "Tersimpan";
   });
+}
+
+/** One-line comparison of the virtual answer with the physical measurement. */
+function physSummary(answer: number | null, physical: number | null, unit: string): string {
+  const d = percentDiff(answer, physical);
+  if (d == null) return "";
+  const dir = Math.abs(d) < 0.05 ? "sama dengan" : d > 0 ? "lebih besar dari" : "lebih kecil dari";
+  return `Jawaban virtual ${fmt(answer)} ${unit} ${dir} hasil fisik${Math.abs(d) < 0.05 ? "" : ` sebesar ${fmt(Math.abs(d), 1)}%`}. ${CLOSENESS_MSG[closeness(d)]}`;
 }
 
 function check(): void {

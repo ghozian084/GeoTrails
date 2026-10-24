@@ -1,3 +1,4 @@
+import { percentDiff } from "../logic/compare";
 import { toCsv } from "../logic/csv";
 import { session, isGateDone, posts, S, total } from "../state";
 import { clearSaved } from "../store";
@@ -5,16 +6,20 @@ import { $, esc, fmt, toast } from "./dom";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 const csv = () => toCsv(S(), posts);
+const diff = (a: number | null, p: number | null) => {
+  const d = percentDiff(a, p);
+  return d == null ? "–" : `${d > 0 ? "+" : d < 0 ? "−" : ""}${fmt(Math.abs(d), 1)}%`;
+};
 
 export function openLog(): void {
   if (!session.S) { toast("Mulai jelajah dulu"); return; }
   const rows = S().posts.map((st, i) => {
     const lbl = st.result === "green" ? "hijau" : st.result === "orange" ? "oranye" : (i === 0 || isGateDone() ? "terbuka" : "terkunci");
     const cls = st.result || (i === 0 || isGateDone() ? "open" : "");
-    return `<tr><td class="num">${i}</td><td>${esc(posts[i].title)}</td><td><span class="pill ${cls}">${lbl}</span></td><td class="num">${st.answer != null ? fmt(st.answer) + " " + esc(posts[i].unit) : "–"}</td><td class="num">${st.attempts.length}</td><td class="num">${st.hints}</td><td class="num">${mmss(st.time)}</td><td class="num">${st.score}</td></tr>`;
+    return `<tr><td class="num">${i}</td><td>${esc(posts[i].title)}</td><td><span class="pill ${cls}">${lbl}</span></td><td class="num">${st.answer != null ? fmt(st.answer) + " " + esc(posts[i].unit) : "–"}</td><td class="num">${st.attempts.length}</td><td class="num">${st.hints}</td><td class="num">${mmss(st.time)}</td><td class="num">${st.score}</td><td class="num">${st.physical != null ? fmt(st.physical) + " " + esc(posts[i].unit) : "–"}</td><td class="num">${diff(st.answer, st.physical)}</td></tr>`;
   }).join("");
   $("log").innerHTML = `<h2>Log ${esc(S().name)}</h2><p class="sub">Total ${total()} poin · ${S().posts.filter((p) => p.result).length}/6 pos selesai</p>
-   <div class="tblwrap"><table><thead><tr><th>Pos</th><th>Objek</th><th>Hasil</th><th style="text-align:right">Jawaban</th><th style="text-align:right">Coba</th><th style="text-align:right">Petunjuk</th><th style="text-align:right">Durasi</th><th style="text-align:right">Poin</th></tr></thead><tbody>${rows}</tbody></table></div>
+   <div class="tblwrap"><table><thead><tr><th>Pos</th><th>Objek</th><th>Hasil</th><th style="text-align:right">Jawaban</th><th style="text-align:right">Coba</th><th style="text-align:right">Petunjuk</th><th style="text-align:right">Durasi</th><th style="text-align:right">Poin</th><th style="text-align:right">Fisik</th><th style="text-align:right">Selisih</th></tr></thead><tbody>${rows}</tbody></table></div>
    <textarea id="csvBox" readonly aria-label="Data CSV">${esc(csv())}</textarea>
    <div class="row"><button class="btn primary" id="copyBtn">Salin CSV</button><button class="btn" id="dlBtn">Unduh .csv</button><small id="copyMsg"></small><span class="spacer"></span><button class="btn ghost" id="resetBtn">Mulai ulang</button><button class="btn" id="closeLog">Tutup</button></div>`;
   $("logOv").hidden = false;
