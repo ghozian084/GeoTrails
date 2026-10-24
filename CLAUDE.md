@@ -17,7 +17,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 
 ## Stack
 - Vite + TypeScript, tanpa framework. Peta digambar di `<canvas>`, sedangkan UI memakai DOM biasa.
-- Vitest untuk logika: parsing angka, penilaian, skor, kalkulator, CSV, rekap, validasi isi pos, sprite. Playwright untuk alur end-to-end (belum disiapkan sebagai `npm run e2e`).
+- Vitest untuk logika: parsing angka, penilaian, skor, kalkulator, CSV, rekap, validasi isi pos, sprite. Playwright untuk alur end-to-end siswa dan guru (`e2e/`), dijalankan terhadap build produksi lewat `vite preview`. Tes e2e juga memastikan tidak ada permintaan ke internet saat aplikasi dipakai.
 - `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id.
 - `npm run build:single` menghasilkan satu file HTML offline di `dist-single/index.html` dengan vite-plugin-singlefile.
 
@@ -38,6 +38,7 @@ src/
   ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai
     teacher/           Mode guru: kunci jawaban, foto pos, isi pos, rekap kelas, pengaturan
 tests/                 Vitest
+e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, helpers.ts)
 public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ```
@@ -82,6 +83,6 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ## Perintah
 - `npm run dev`: server lokal
 - `npm test`: Vitest
-- `npm run typecheck`: pemeriksaan TypeScript
+- `npm run typecheck`: pemeriksaan TypeScript (aplikasi dan e2e)
 - `npm run build` / `npm run build:single`
-- `npm run e2e`: Playwright (belum disiapkan)
+- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`.
