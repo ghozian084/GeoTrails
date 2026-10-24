@@ -10,6 +10,9 @@ import { updateHud } from "./hud";
 import { mountPano } from "./panorama";
 import { SCENES } from "./scenes";
 
+/** Max length of a worksheet note. */
+const WORK_MAX = 2000;
+
 let game: Game;
 export const setGame = (g: Game): void => { game = g; };
 
@@ -67,6 +70,11 @@ function renderPost(): void {
         ${hintsHtml}
         ${canHint ? `<button class="btn ghost" id="hintBtn" type="button">Buka petunjuk ${st.hints + 1} ${free ? "(gratis)" : `(−${HINT_COST} poin)`}</button>` : ""}
       </div>
+      <div class="work">
+        <h3><label for="work">Lembar kerja</label><span class="attempts" id="workMsg">${st.work ? "Tersimpan" : ""}</span></h3>
+        <textarea id="work" maxlength="${WORK_MAX}" placeholder="Tulis model dan langkah hitung kelompokmu. Tandai data yang kamu taksir dari foto, misalnya: tinggi tandon ≈ 1,2 × tinggi Pak Satpam (taksiran).">${esc(st.work)}</textarea>
+        <small>Tersimpan otomatis di laptop ini dan ikut ke log CSV. Jangan menulis data pribadi.</small>
+      </div>
     </div>`;
   $("post").setAttribute("aria-labelledby", "ptitle");
   if (p.media === "pano") mountPano($("pano"), SCENES[p.id](), p.focus);
@@ -76,6 +84,11 @@ function renderPost(): void {
   if ($("reviseBtn")) $("reviseBtn").onclick = () => { lastFb = null; renderPost(); $("ans").focus(); };
   if ($("lockBtn")) $("lockBtn").onclick = () => { st.result = "orange"; st.score = orangeScore(st.hints, free); lastFb = null; persist(); updateHud(); renderPost(); };
   $("ansForm").addEventListener("submit", (e) => { e.preventDefault(); check(); });
+  $("work").addEventListener("input", (e) => {
+    st.work = (e.target as HTMLTextAreaElement).value.slice(0, WORK_MAX);
+    persist();
+    $("workMsg").textContent = "Tersimpan";
+  });
 }
 
 function check(): void {

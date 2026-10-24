@@ -37,6 +37,10 @@ export interface PostState {
   /** Seconds spent with the post open. */
   time: number;
   score: number;
+  /** Worksheet: the group's model and working for this post. */
+  work: string;
+  /** Value measured on the physical trail, to compare with the virtual answer. */
+  physical: number | null;
 }
 
 export interface GroupState {
@@ -46,6 +50,8 @@ export interface GroupState {
   posts: PostState[];
   started: number;
   finShown: boolean;
+  /** Answers to the end-of-trail reflection questions. */
+  reflection: string[];
 }
 
 export interface Trail {

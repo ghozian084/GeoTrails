@@ -2,7 +2,8 @@ import { START } from "./data/map";
 import type { GroupState, Post } from "./types";
 
 /*
- * Persistence. Only the group name, avatar colour and trail progress are stored (no personal data).
+ * Persistence. Only the group name, avatar colour and trail progress (answers, worksheet notes,
+ * physical measurements, reflection) are stored; no personal data.
  * Teacher-uploaded images will go to IndexedDB; not used yet.
  */
 export const KEY = "geotrails.v1";
@@ -14,10 +15,21 @@ export function fresh(name: string, color: string, posts: Post[]): GroupState {
     name,
     color,
     pos: [...START],
-    posts: posts.map((p) => ({ id: p.id, result: null, answer: null, attempts: [], hints: 0, time: 0, score: 0 })),
+    posts: posts.map((p) => ({ id: p.id, result: null, answer: null, attempts: [], hints: 0, time: 0, score: 0, work: "", physical: null })),
     started: Date.now(),
     finShown: false,
+    reflection: [],
   };
+}
+
+/** Fill fields added after a save was written, so older progress keeps working. */
+export function normalize(v: GroupState): GroupState {
+  v.reflection = Array.isArray(v.reflection) ? v.reflection : [];
+  v.posts.forEach((p) => {
+    p.work = typeof p.work === "string" ? p.work : "";
+    p.physical = typeof p.physical === "number" ? p.physical : null;
+  });
+  return v;
 }
 
 export function save(S: GroupState | null): void {
@@ -27,7 +39,7 @@ export function save(S: GroupState | null): void {
 export function loadSaved(postCount: number): GroupState | null {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
-    return v && v.posts && v.posts.length === postCount ? v : null;
+    return v && v.posts && v.posts.length === postCount ? normalize(v) : null;
   } catch {
     return null;
   }
