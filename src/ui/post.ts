@@ -97,15 +97,19 @@ function renderPost(): void {
   if ($("reviseBtn")) $("reviseBtn").onclick = () => { lastFb = null; renderPost(); $("ans").focus(); };
   if ($("lockBtn")) $("lockBtn").onclick = () => { st.result = "orange"; st.score = orangeScore(st.hints, free); lastFb = null; persist(); updateHud(); renderPost(); };
   $("ansForm").addEventListener("submit", (e) => { e.preventDefault(); check(); });
-  if (done) $("physForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const raw = $<HTMLInputElement>("phys").value.trim();
-    const v = parseNumber(raw);
-    if (raw && !(isFinite(v) && v > 0)) { $("physOut").textContent = "Tulis hasil ukur berupa angka positif, misalnya 12,4."; return; }
-    st.physical = raw ? v : null;
-    persist();
-    $("physOut").textContent = physSummary(st.answer, st.physical, p.unit);
-  });
+  if (done) {
+    // Saves while typing; the error only shows on an explicit save.
+    const commit = (showError: boolean) => {
+      const raw = $<HTMLInputElement>("phys").value.trim();
+      const v = parseNumber(raw);
+      if (raw && !(isFinite(v) && v > 0)) { if (showError) $("physOut").textContent = "Tulis hasil ukur berupa angka positif, misalnya 12,4."; return; }
+      st.physical = raw ? v : null;
+      persist();
+      $("physOut").textContent = physSummary(st.answer, st.physical, p.unit);
+    };
+    $("phys").addEventListener("input", () => commit(false));
+    $("physForm").addEventListener("submit", (e) => { e.preventDefault(); commit(true); });
+  }
   mountCalc((v) => { const i = $<HTMLInputElement>("ans"); i.value = v; i.focus(); });
   $("work").addEventListener("input", (e) => {
     st.work = (e.target as HTMLTextAreaElement).value.slice(0, WORK_MAX);
