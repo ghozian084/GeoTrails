@@ -27,4 +27,15 @@ describe("log CSV", () => {
     const csv = toCsv(S, POSTS);
     expect(csv).toContain('"tan 48° = 1,11\n""tinggi mata"" 1,5 m"');
   });
+
+  it("refleksi ditambahkan sebagai tabel kedua bila sudah diisi", () => {
+    const S = fresh("Uji", "#000", POSTS);
+    expect(toCsv(S, POSTS)).not.toContain("refleksi");
+    S.reflection[1] = "Lupa menambah tinggi mata";
+    const lines = toCsv(S, POSTS).split("\n");
+    const at = lines.indexOf("kelompok,refleksi,jawaban");
+    expect(at).toBe(POSTS.length + 2);
+    expect(lines[at - 1]).toBe("");
+    expect(lines[at + 2]).toContain("Lupa menambah tinggi mata");
+  });
 });
