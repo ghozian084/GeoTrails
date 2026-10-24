@@ -1,12 +1,14 @@
-import { BUILD, COLS, ROWS, tiles, TREES } from "../data/map";
+import { COLS, ROWS } from "../data/map";
 import { gateDone } from "../logic/score";
 import type { GroupState, Post } from "../types";
 import { blinking, walkPose, type Dir } from "./anim";
 import type { Pt } from "./bfs";
 import type { Cam } from "./camera";
+import { props, type Prop } from "./props";
 import { SPRITE_H, SPRITE_W, spriteFrame } from "./sprite";
+import { renderWorld } from "./world";
 
-const COLOR_KEYS = ["map-grass", "map-grass-2", "map-pave", "map-pave-line", "map-roof", "map-roof-edge", "map-label", "map-tree", "map-court", "map-shadow", "accent", "tape", "good", "warn", "lock", "ink", "surface"];
+const COLOR_KEYS = ["map-grass", "map-grass-2", "map-pave", "map-pave-line", "map-roof", "map-roof-edge", "map-label", "map-tree", "map-court", "map-shadow", "map-wall", "map-window", "map-curb", "map-soil", "map-concrete", "accent", "tape", "good", "warn", "lock", "ink", "surface"];
 
 /** Map palette, read from CSS custom properties so it follows light/dark mode. */
 export const C: Record<string, string> = {};
@@ -38,56 +40,49 @@ export interface Frame {
   now: number;
 }
 
+/** Static ground layer, rebuilt only when tile size, pixel ratio or theme colours change. */
+let world: { key: string; canvas: HTMLCanvasElement; props: Prop[] } | null = null;
+function worldFor(T: number, DPR: number) {
+  const key = `${T}|${DPR}|${JSON.stringify(C)}`;
+  if (!world || world.key !== key) world = { key, canvas: renderWorld(T, DPR, C), props: props(T, DPR, C) };
+  return world;
+}
+
 export function draw(f: Frame): void {
   const { ctx, W, H, T, DPR, cam, av, path, posts, S, now } = f;
   const rr = (x: number, y: number, w: number, h: number, r: number) => {
     ctx.beginPath();
     if (typeof ctx.roundRect === "function") ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
   };
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
-  const mw = COLS * T, mh = ROWS * T;
-  ctx.save(); ctx.translate(-cam.x, -cam.y);
-  // tanah
-  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
-    const t = tiles[y][x]; const X = x * T, Y = y * T;
-    if (t === "p") { ctx.fillStyle = C["map-pave"]; ctx.fillRect(X, Y, T, T); ctx.strokeStyle = C["map-pave-line"]; ctx.lineWidth = 1; ctx.strokeRect(X + .5, Y + .5, T - 1, T - 1); }
-    else { ctx.fillStyle = (x + y) % 2 ? C["map-grass"] : C["map-grass-2"]; ctx.fillRect(X, Y, T, T); }
-  }
-  // garis lapangan upacara
-  ctx.strokeStyle = C["map-court"]; ctx.lineWidth = 2; ctx.strokeRect(9 * T, 9 * T, 18 * T, 6 * T); ctx.beginPath(); ctx.moveTo(18 * T, 9 * T); ctx.lineTo(18 * T, 15 * T); ctx.stroke();
-  // pagar tepi
-  ctx.strokeStyle = C["map-roof-edge"]; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(0, mh - 1.5); ctx.lineTo(16 * T, mh - 1.5); ctx.moveTo(20 * T, mh - 1.5); ctx.lineTo(mw, mh - 1.5); ctx.stroke(); ctx.setLineDash([]);
-  // gerbang
-  ctx.fillStyle = C.accent; ctx.fillRect(15.6 * T, mh - T * .28, T * .4, T * .28); ctx.fillRect(20 * T, mh - T * .28, T * .4, T * .28);
-  // taman setengah lingkaran
-  ctx.fillStyle = C["map-tree"]; ctx.globalAlpha = .75; ctx.beginPath(); ctx.moveTo(31 * T, 19.2 * T); ctx.lineTo(33.5 * T, 19.2 * T); ctx.arc(33.5 * T, 21.5 * T, 2.3 * T, -Math.PI / 2, Math.PI / 2); ctx.lineTo(31 * T, 23.8 * T); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
-  // bangunan
-  BUILD.forEach((b) => {
-    const [x0, y0, x1, y1] = b.r; const X = x0 * T + 3, Y = y0 * T + 3, w = (x1 - x0 + 1) * T - 6, h = (y1 - y0 + 1) * T - 6;
-    ctx.fillStyle = C["map-shadow"]; rr(X + 4, Y + 6, w, h, 6); ctx.fill();
-    ctx.fillStyle = C["map-roof"]; rr(X, Y, w, h, 6); ctx.fill(); ctx.strokeStyle = C["map-roof-edge"]; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = C["map-label"]; ctx.font = `700 ${Math.max(10, T * .36)}px "Chakra Petch",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const words = b.n.split(" "); const fits = ctx.measureText(b.n).width < w - 8;
-    if (fits) ctx.fillText(b.n, X + w / 2, Y + h / 2);
-    else { const mid = Math.ceil(words.length / 2); ctx.fillText(words.slice(0, mid).join(" "), X + w / 2, Y + h / 2 - T * .22); ctx.fillText(words.slice(mid).join(" "), X + w / 2, Y + h / 2 + T * .22); }
-  });
-  // pohon
-  TREES.forEach(([x, y]) => { ctx.fillStyle = C["map-shadow"]; ctx.beginPath(); ctx.arc(x * T + T / 2 + 3, y * T + T / 2 + 4, T * .42, 0, 7); ctx.fill(); ctx.fillStyle = C["map-tree"]; ctx.beginPath(); ctx.arc(x * T + T / 2, y * T + T / 2, T * .42, 0, 7); ctx.fill(); });
-  // objek pos
   const cx = (x: number) => x * T + T / 2;
-  // tiang
-  ctx.fillStyle = "#A9B1B6"; ctx.beginPath(); ctx.arc(cx(17), cx(11), T * .18, 0, 7); ctx.fill(); ctx.fillStyle = "#D7262E"; ctx.fillRect(cx(17), cx(11) - T * .38, T * .36, T * .16); ctx.fillStyle = "#fff"; ctx.fillRect(cx(17), cx(11) - T * .22, T * .36, T * .16); ctx.strokeStyle = "#6C757B"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx(17), cx(11)); ctx.lineTo(cx(17), cx(11) - T * .42); ctx.stroke();
-  // tandon
-  ctx.fillStyle = "#2F6F8F"; ctx.beginPath(); ctx.arc(cx(2), cx(22), T * .4, 0, 7); ctx.fill(); ctx.strokeStyle = "#9ECBE0"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx(2), cx(22), T * .2, 0, 7); ctx.stroke();
-  // pot
-  ctx.fillStyle = "#B8643E"; ctx.beginPath(); ctx.arc(cx(11), cx(21), T * .34, 0, 7); ctx.fill(); ctx.fillStyle = "#4F8E45"; ctx.beginPath(); ctx.arc(cx(11), cx(21), T * .18, 0, 7); ctx.fill();
-  // ramp
-  ctx.fillStyle = "rgba(0,0,0,.12)"; ctx.fillRect(8 * T, 7 * T, 3 * T, T); ctx.strokeStyle = C["map-roof-edge"]; ctx.lineWidth = 1.5;
-  for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo(8 * T + i * T / 2, 8 * T); ctx.lineTo(8 * T + i * T / 2 + T / 2, 7 * T); ctx.stroke(); }
-  // bayangan gedung B
-  ctx.fillStyle = "rgba(20,30,40,.28)"; ctx.fillRect(15 * T, 6 * T, 13 * T, T);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+  ctx.save(); ctx.translate(-cam.x, -cam.y);
+  const wd = worldFor(T, DPR);
+  ctx.drawImage(wd.canvas, 0, 0, COLS * T, ROWS * T);
+
   // jalur
   if (path.length) { ctx.fillStyle = C.accent; path.forEach(([x, y], i) => { ctx.globalAlpha = .35 + .65 * (1 - i / path.length); ctx.beginPath(); ctx.arc(cx(x), cx(y), T * .08, 0, 7); ctx.fill(); }); ctx.globalAlpha = 1; }
+
+  // Tall objects and the avatar, back to front.
+  const layers: Prop[] = [...wd.props];
+  const ax = av.px * T + T / 2, ay = av.py * T + T / 2;
+  const k = T * 1.3 / SPRITE_H, sw = SPRITE_W * k, sh = SPRITE_H * k, feet = ay + T * .42;
+  if (S) {
+    layers.push({
+      depth: av.py + .5 + 1e-3,
+      draw: () => {
+        const moving = now - av.movedAt < 120;
+        ctx.fillStyle = C["map-shadow"]; ctx.beginPath(); ctx.ellipse(ax, feet - T * .04, T * .3, T * .1, 0, 0, 7); ctx.fill();
+        const frame = spriteFrame(S.color, av.dir, walkPose(av.dist, moving), !moving && blinking(now));
+        const smooth = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(frame, ax - sw / 2, feet - sh, sw, sh);
+        ctx.imageSmoothingEnabled = smooth;
+      },
+    });
+  }
+  layers.sort((a, b) => a.depth - b.depth).forEach((l) => l.draw(ctx, now));
+
   // penanda pos
   const pulse = (Math.sin(now / 320) + 1) / 2;
   posts.forEach((p, i) => {
@@ -101,18 +96,9 @@ export function draw(f: Frame): void {
     ctx.fillStyle = "#fff"; ctx.font = `700 ${T * .34}px "JetBrains Mono",monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(st && st.result ? "✓" : locked ? "·" : String(i), mx, my + 1);
   });
-  // avatar
+
+  // Name tag stays on top of trees and markers.
   if (S) {
-    const ax = av.px * T + T / 2, ay = av.py * T + T / 2;
-    const moving = now - av.movedAt < 120;
-    const k = T * 1.3 / SPRITE_H, sw = SPRITE_W * k, sh = SPRITE_H * k;
-    const feet = ay + T * .42;
-    ctx.fillStyle = C["map-shadow"]; ctx.beginPath(); ctx.ellipse(ax, feet - T * .04, T * .3, T * .1, 0, 0, 7); ctx.fill();
-    const frame = spriteFrame(S.color, av.dir, walkPose(av.dist, moving), !moving && blinking(now));
-    const smooth = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(frame, ax - sw / 2, feet - sh, sw, sh);
-    ctx.imageSmoothingEnabled = smooth;
     ctx.font = `700 ${Math.max(11, T * .3)}px "Atkinson Hyperlegible",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const tw = ctx.measureText(S.name).width + 12, ty = feet - sh - T * .26;
     ctx.fillStyle = C.surface; rr(ax - tw / 2, ty - T * .2, tw, T * .4, 6); ctx.fill(); ctx.fillStyle = C.ink; ctx.fillText(S.name, ax, ty);
