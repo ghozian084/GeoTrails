@@ -15,6 +15,11 @@ export function toCsv(S: GroupState, posts: Post[], reflection: string[] = REFLE
     rows.push([], ["kelompok", "refleksi", "jawaban"]);
     reflection.forEach((q, i) => rows.push([S.name, q, S.reflection[i] ?? ""]));
   }
+  return csvJoin(rows);
+}
+
+/** Join rows into CSV text, quoting cells that contain quotes, commas, semicolons or newlines. */
+export function csvJoin(rows: (string | number)[][]): string {
   return rows
     .map((r) => r.map((c) => { const s = String(c); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(","))
     .join("\n");

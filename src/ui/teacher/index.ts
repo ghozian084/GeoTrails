@@ -5,6 +5,7 @@ import { $, esc } from "../dom";
 import { renderEditor } from "./editor";
 import { renderKeys } from "./keys";
 import { renderPhotos } from "./photos";
+import { renderRecap } from "./recap";
 import { renderSettings } from "./settings";
 
 /* Teacher panel: gated by a local PIN, organised in tabs. */
@@ -19,6 +20,7 @@ const TABS: Tab[] = [
   { id: "keys", label: "Kunci jawaban", render: renderKeys },
   { id: "photos", label: "Foto pos", render: renderPhotos },
   { id: "editor", label: "Isi pos", render: renderEditor },
+  { id: "recap", label: "Rekap kelas", render: renderRecap },
   { id: "settings", label: "Pengaturan", render: renderSettings },
 ];
 
