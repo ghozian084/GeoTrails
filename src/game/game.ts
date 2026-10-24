@@ -12,6 +12,8 @@ export interface GameHooks {
   closeAll(): void;
   save(): void;
   onNearPost(p: Post | undefined): void;
+  /** True when every post is open (teacher demo mode). */
+  allOpen(): boolean;
 }
 
 export interface Game {
@@ -55,7 +57,7 @@ export function createGame(canvas: HTMLCanvasElement, stage: HTMLElement, posts:
     const dt = Math.min(.05, (now - t0) / 1000); t0 = now;
     step(dt, now);
     follow(cam, av.px, av.py, T, W, H);
-    draw({ ctx, W, H, T, DPR, cam, av, path, posts, S: hooks.getState(), now });
+    draw({ ctx, W, H, T, DPR, cam, av, path, posts, S: hooks.getState(), unlocked: hooks.allOpen(), now });
     requestAnimationFrame(frame);
   }
 

@@ -1,5 +1,7 @@
 import type { Game } from "../game/game";
+import { closeness, CLOSENESS_MSG, percentDiff } from "../logic/compare";
 import { grade } from "../logic/grade";
+import { isPanorama } from "../logic/image";
 import { parseNumber } from "../logic/parseNumber";
 import { greenScore, HINT_COST, isFreePost, orangeScore } from "../logic/score";
 import { isGateDone, persist, posts, S } from "../state";
@@ -7,8 +9,13 @@ import type { Zone } from "../types";
 import { $, esc, fmt, toast } from "./dom";
 import { maybeFinish } from "./finish";
 import { updateHud } from "./hud";
+import { calcHtml, mountCalc } from "./calculator";
 import { mountPano } from "./panorama";
+import { photoFor } from "./photos";
 import { SCENES } from "./scenes";
+
+/** Max length of a worksheet note. */
+const WORK_MAX = 2000;
 
 let game: Game;
 export const setGame = (g: Game): void => { game = g; };
@@ -32,15 +39,18 @@ export function closePost(): void {
 
 export function closeAll(): void {
   if (!$("postOv").hidden) closePost();
-  $("logOv").hidden = true; $("finOv").hidden = true;
+  $("logOv").hidden = true; $("finOv").hidden = true; $("teachOv").hidden = true;
 }
 
 function renderPost(): void {
   const id = cur!;
   const p = posts[id], st = S().posts[id], done = !!st.result, free = isFreePost(id);
-  const media = p.media === "pano"
+  const photo = photoFor(p.id);
+  // A wide photo becomes a panorama; without a photo the built-in illustration is used.
+  const pano = photo ? isPanorama(photo.w, photo.h) : p.media === "pano";
+  const media = pano
     ? `<div class="pano" id="pano"><span class="badge">PANORAMA 360°</span><div class="ctl"><button type="button" data-l aria-label="Putar kiri">◀</button><button type="button" data-z>Perbesar</button><button type="button" data-r aria-label="Putar kanan">▶</button></div></div>`
-    : `<div class="frame">${SCENES[p.id]()}</div>`;
+    : photo ? `<div class="frame"><img src="${esc(photo.url)}" alt="Foto ${esc(p.title)}"></div>` : `<div class="frame">${SCENES[p.id]()}</div>`;
   const hintsHtml = p.hints.slice(0, st.hints).map((h, i) => `<div class="hint"><b>P${i + 1}</b>${esc(h)}</div>`).join("");
   const canHint = st.hints < p.hints.length && !done;
   let fbHtml = "";
@@ -51,7 +61,7 @@ function renderPost(): void {
   }
   const value = done ? esc(fmt(st.answer)) : (st.attempts.length && lastFb && lastFb.id === id ? esc(fmt(st.attempts[st.attempts.length - 1])) : "");
   $("post").innerHTML = `
-    <div class="media">${media}<div class="cap"><span>Ilustrasi pengganti foto · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div>
+    <div class="media"><div class="media-in">${media}<div class="cap"><span>${photo ? "Foto" : "Ilustrasi pengganti foto"} · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div></div>
     <div class="body">
       <header><span class="chip">POS ${p.id}</span><h2 id="ptitle">${esc(p.title)}</h2><button class="x" id="xBtn" aria-label="Tutup">×</button></header>
       <div class="concept">${esc(p.concept)}</div>
@@ -60,22 +70,68 @@ function renderPost(): void {
       <form class="answer" id="ansForm">
         <div class="inp"><input id="ans" inputmode="decimal" autocomplete="off" placeholder="jawabanmu" aria-label="Jawaban dalam ${esc(p.unit)}" ${done ? "disabled" : ""} value="${value}"><span class="unit">${esc(p.unit)}</span></div>
         <button class="btn primary" type="submit" ${done ? "disabled" : ""}>Periksa</button>
+        <button class="btn" type="button" id="calcBtn" aria-controls="calc">Kalkulator</button>
       </form>
+      ${calcHtml(!done)}
       ${fbHtml}
+      ${done ? `<form class="phys" id="physForm">
+        <h3><label for="phys">Fisik: hasil ukur di lapangan</label></h3>
+        <small>Saat trail fisik, ukur objek ini lalu simpan hasilnya untuk dibandingkan dengan jawaban virtualmu.</small>
+        <div class="answer">
+          <div class="inp"><input id="phys" inputmode="decimal" autocomplete="off" placeholder="hasil ukur" value="${st.physical != null ? esc(fmt(st.physical)) : ""}"><span class="unit">${esc(p.unit)}</span></div>
+          <button class="btn" type="submit">Simpan</button>
+        </div>
+        <div class="phys-out" id="physOut" aria-live="polite">${esc(physSummary(st.answer, st.physical, p.unit))}</div>
+      </form>` : ""}
       <div class="hints">
         <h3><span>Petunjuk</span><span class="attempts">${st.attempts.length} percobaan · ${st.hints} petunjuk</span></h3>
         ${hintsHtml}
         ${canHint ? `<button class="btn ghost" id="hintBtn" type="button">Buka petunjuk ${st.hints + 1} ${free ? "(gratis)" : `(−${HINT_COST} poin)`}</button>` : ""}
       </div>
+      <div class="work">
+        <h3><label for="work">Lembar kerja</label><span class="attempts" id="workMsg">${st.work ? "Tersimpan" : ""}</span></h3>
+        <textarea id="work" maxlength="${WORK_MAX}" placeholder="Tulis model dan langkah hitung kelompokmu. Tandai data yang kamu taksir dari foto, misalnya: tinggi tandon ≈ 1,2 × tinggi Pak Satpam (taksiran).">${esc(st.work)}</textarea>
+        <small>Tersimpan otomatis di laptop ini dan ikut ke log CSV. Jangan menulis data pribadi.</small>
+      </div>
     </div>`;
   $("post").setAttribute("aria-labelledby", "ptitle");
-  if (p.media === "pano") mountPano($("pano"), SCENES[p.id](), p.focus);
+  if (pano) {
+    if (photo) mountPano($("pano"), photo.url, photo.w / photo.h, p.focus);
+    else mountPano($("pano"), "data:image/svg+xml;charset=utf-8," + encodeURIComponent(SCENES[p.id]()), 4, p.focus);
+  }
   $("xBtn").onclick = closePost;
   if ($("closeBtn")) $("closeBtn").onclick = closePost;
   if ($("hintBtn")) $("hintBtn").onclick = () => { st.hints++; persist(); renderPost(); };
   if ($("reviseBtn")) $("reviseBtn").onclick = () => { lastFb = null; renderPost(); $("ans").focus(); };
   if ($("lockBtn")) $("lockBtn").onclick = () => { st.result = "orange"; st.score = orangeScore(st.hints, free); lastFb = null; persist(); updateHud(); renderPost(); };
   $("ansForm").addEventListener("submit", (e) => { e.preventDefault(); check(); });
+  if (done) {
+    // Saves while typing; the error only shows on an explicit save.
+    const commit = (showError: boolean) => {
+      const raw = $<HTMLInputElement>("phys").value.trim();
+      const v = parseNumber(raw);
+      if (raw && !(isFinite(v) && v > 0)) { if (showError) $("physOut").textContent = "Tulis hasil ukur berupa angka positif, misalnya 12,4."; return; }
+      st.physical = raw ? v : null;
+      persist();
+      $("physOut").textContent = physSummary(st.answer, st.physical, p.unit);
+    };
+    $("phys").addEventListener("input", () => commit(false));
+    $("physForm").addEventListener("submit", (e) => { e.preventDefault(); commit(true); });
+  }
+  mountCalc((v) => { const i = $<HTMLInputElement>("ans"); i.value = v; i.focus(); });
+  $("work").addEventListener("input", (e) => {
+    st.work = (e.target as HTMLTextAreaElement).value.slice(0, WORK_MAX);
+    persist();
+    $("workMsg").textContent = "Tersimpan";
+  });
+}
+
+/** One-line comparison of the virtual answer with the physical measurement. */
+function physSummary(answer: number | null, physical: number | null, unit: string): string {
+  const d = percentDiff(answer, physical);
+  if (d == null) return "";
+  const dir = Math.abs(d) < 0.05 ? "sama dengan" : d > 0 ? "lebih besar dari" : "lebih kecil dari";
+  return `Jawaban virtual ${fmt(answer)} ${unit} ${dir} hasil fisik${Math.abs(d) < 0.05 ? "" : ` sebesar ${fmt(Math.abs(d), 1)}%`}. ${CLOSENESS_MSG[closeness(d)]}`;
 }
 
 function check(): void {

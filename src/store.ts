@@ -1,8 +1,9 @@
 import { START } from "./data/map";
-import type { GroupState, Post } from "./types";
+import type { GroupState, Post, TeacherSettings } from "./types";
 
 /*
- * Persistence. Only the group name, avatar colour and trail progress are stored (no personal data).
+ * Persistence. Only the group name, avatar colour and trail progress (answers, worksheet notes,
+ * physical measurements, reflection) are stored; no personal data.
  * Teacher-uploaded images will go to IndexedDB; not used yet.
  */
 export const KEY = "geotrails.v1";
@@ -14,10 +15,21 @@ export function fresh(name: string, color: string, posts: Post[]): GroupState {
     name,
     color,
     pos: [...START],
-    posts: posts.map((p) => ({ id: p.id, result: null, answer: null, attempts: [], hints: 0, time: 0, score: 0 })),
+    posts: posts.map((p) => ({ id: p.id, result: null, answer: null, attempts: [], hints: 0, time: 0, score: 0, work: "", physical: null })),
     started: Date.now(),
     finShown: false,
+    reflection: [],
   };
+}
+
+/** Fill fields added after a save was written, so older progress keeps working. */
+export function normalize(v: GroupState): GroupState {
+  v.reflection = Array.isArray(v.reflection) ? v.reflection : [];
+  v.posts.forEach((p) => {
+    p.work = typeof p.work === "string" ? p.work : "";
+    p.physical = typeof p.physical === "number" ? p.physical : null;
+  });
+  return v;
 }
 
 export function save(S: GroupState | null): void {
@@ -27,7 +39,7 @@ export function save(S: GroupState | null): void {
 export function loadSaved(postCount: number): GroupState | null {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
-    return v && v.posts && v.posts.length === postCount ? v : null;
+    return v && v.posts && v.posts.length === postCount ? normalize(v) : null;
   } catch {
     return null;
   }
@@ -35,4 +47,63 @@ export function loadSaved(postCount: number): GroupState | null {
 
 export function clearSaved(): void {
   try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
+}
+
+export const TEACHER_KEY = "geotrails.guru";
+
+export function loadTeacher(): TeacherSettings {
+  try {
+    const v = JSON.parse(localStorage.getItem(TEACHER_KEY) || "null");
+    return { pinHash: typeof v?.pinHash === "string" ? v.pinHash : null, demo: v?.demo === true };
+  } catch {
+    return { pinHash: null, demo: false };
+  }
+}
+
+export function saveTeacher(t: TeacherSettings): void {
+  try { localStorage.setItem(TEACHER_KEY, JSON.stringify(t)); } catch { /* storage unavailable */ }
+}
+
+/* Teacher-uploaded post photos live in IndexedDB (too large for localStorage). */
+const DB_NAME = "geotrails", PHOTO_STORE = "photos";
+
+function openDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(PHOTO_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function photoTx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const db = await openDb();
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const req = fn(db.transaction(PHOTO_STORE, mode).objectStore(PHOTO_STORE));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export const getPhoto = (id: number): Promise<Blob | undefined> => photoTx("readonly", (s) => s.get(id));
+export const putPhoto = (id: number, blob: Blob): Promise<IDBValidKey> => photoTx("readwrite", (s) => s.put(blob, id));
+export const deletePhoto = (id: number): Promise<undefined> => photoTx("readwrite", (s) => s.delete(id));
+
+/* Teacher-edited post content (see logic/trail.ts). */
+export const TRAIL_KEY = "geotrails.trail";
+
+export function loadCustomTrail(): unknown {
+  try { return JSON.parse(localStorage.getItem(TRAIL_KEY) || "null"); } catch { return null; }
+}
+
+export function saveCustomTrail(file: unknown): void {
+  localStorage.setItem(TRAIL_KEY, JSON.stringify(file));
+}
+
+export function clearCustomTrail(): void {
+  try { localStorage.removeItem(TRAIL_KEY); } catch { /* storage unavailable */ }
 }
