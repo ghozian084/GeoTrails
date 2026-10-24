@@ -92,3 +92,18 @@ async function photoTx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => I
 export const getPhoto = (id: number): Promise<Blob | undefined> => photoTx("readonly", (s) => s.get(id));
 export const putPhoto = (id: number, blob: Blob): Promise<IDBValidKey> => photoTx("readwrite", (s) => s.put(blob, id));
 export const deletePhoto = (id: number): Promise<undefined> => photoTx("readwrite", (s) => s.delete(id));
+
+/* Teacher-edited post content (see logic/trail.ts). */
+export const TRAIL_KEY = "geotrails.trail";
+
+export function loadCustomTrail(): unknown {
+  try { return JSON.parse(localStorage.getItem(TRAIL_KEY) || "null"); } catch { return null; }
+}
+
+export function saveCustomTrail(file: unknown): void {
+  localStorage.setItem(TRAIL_KEY, JSON.stringify(file));
+}
+
+export function clearCustomTrail(): void {
+  try { localStorage.removeItem(TRAIL_KEY); } catch { /* storage unavailable */ }
+}

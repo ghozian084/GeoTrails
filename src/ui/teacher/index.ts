@@ -2,6 +2,7 @@ import { checkPin, hashPin, validPin } from "../../logic/pin";
 import { teacher } from "../../state";
 import { saveTeacher } from "../../store";
 import { $, esc } from "../dom";
+import { renderEditor } from "./editor";
 import { renderKeys } from "./keys";
 import { renderPhotos } from "./photos";
 import { renderSettings } from "./settings";
@@ -17,6 +18,7 @@ export interface Tab {
 const TABS: Tab[] = [
   { id: "keys", label: "Kunci jawaban", render: renderKeys },
   { id: "photos", label: "Foto pos", render: renderPhotos },
+  { id: "editor", label: "Isi pos", render: renderEditor },
   { id: "settings", label: "Pengaturan", render: renderSettings },
 ];
 

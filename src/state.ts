@@ -1,12 +1,21 @@
 import { POSTS } from "./data/posts";
 import { gateDone, totalScore } from "./logic/score";
-import { loadTeacher, save } from "./store";
-import type { GroupState } from "./types";
+import { validateTrail } from "./logic/trail";
+import { loadCustomTrail, loadTeacher, save } from "./store";
+import type { GroupState, Post } from "./types";
 
 /** The active group's session; null until the start screen is done. */
 export const session: { S: GroupState | null } = { S: null };
 
-export const posts = POSTS;
+/** Teacher-edited content when present and valid, else the built-in posts. */
+function activeTrail(): { posts: Post[]; custom: boolean } {
+  const saved = loadCustomTrail();
+  const trail = saved ? validateTrail(saved, POSTS).trail : null;
+  return trail ? { posts: trail, custom: true } : { posts: POSTS, custom: false };
+}
+const active = activeTrail();
+export const posts = active.posts;
+export const customTrail = active.custom;
 
 /** Active group state. Only call after the trail has begun. */
 export const S = (): GroupState => session.S!;
