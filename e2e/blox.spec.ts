@@ -1,14 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import { POSTS } from "../src/data/posts";
 import { fresh } from "../src/store";
-import { answer } from "./helpers";
+import { answer, holdStick, PHONE, press } from "./helpers";
 
 /* The 3D Blox prototype at /blox/ reuses the 2D app's posts, grading and saved progress. */
 
 async function startBlox(page: Page, name = "Kelompok Blox") {
   await page.goto("/blox/");
   await page.fill("#gname", name);
-  await page.click("#startForm button[type=submit]");
+  await press(page, "#startForm button[type=submit]");
   await expect(page.locator("#startOv")).toBeHidden();
 }
 
@@ -61,4 +61,21 @@ test("Blox: progres dari versi 2D bisa dilanjutkan di versi 3D", async ({ page }
   await expect(page.locator("#dots span.open")).toHaveCount(5);
   // Standing next to Pos 0, the prompt appears straight away.
   await expect(page.locator("#promptTitle")).toHaveText("Tiang Bendera", { timeout: 15_000 });
+});
+
+test.describe("Blox di HP (layar sentuh)", () => {
+  test.use(PHONE);
+
+  test("joystick dan tombol Buka/Lompat", async ({ page }) => {
+    test.setTimeout(90_000);
+    await startBlox(page, "HP 3D");
+    await expect(page.locator(".stick")).toBeVisible();
+    await expect(page.locator("#touchJump")).toBeVisible();
+    const lift = await holdStick(page, 0, -60);
+    await expect(page.locator("#promptTitle")).toHaveText("Tiang Bendera", { timeout: 40_000 });
+    await lift();
+    await page.tap("#touchJump");
+    await page.tap("#touchAct");
+    await expect(page.locator("#ptitle")).toHaveText("Tiang Bendera");
+  });
 });

@@ -9,5 +9,9 @@ export function follow(cam: Cam, px: number, py: number, T: number, W: number, H
   cam.y = mh < H ? (mh - H) / 2 : Math.max(0, Math.min(mh - H, py * T + T / 2 - H / 2));
 }
 
-/** Tile size in px for a given view size. */
-export const tileSize = (W: number, H: number): number => Math.max(26, Math.min(46, Math.floor(Math.min(W / 17, H / 11))));
+/**
+ * Tile size in px for a given view size. Never smaller than needed for the map to fill the
+ * view, so tall phone screens get no empty band below the map.
+ */
+export const tileSize = (W: number, H: number): number =>
+  Math.max(26, Math.min(46, Math.floor(Math.min(W / 17, H / 11))), Math.ceil(H / ROWS), Math.ceil(W / COLS));

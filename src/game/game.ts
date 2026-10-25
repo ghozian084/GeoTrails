@@ -1,5 +1,6 @@
 import { START, walk } from "../data/map";
 import type { GroupState, Post } from "../types";
+import { dominantDir } from "../ui/stick";
 import { facing } from "./anim";
 import { bfs, type Pt } from "./bfs";
 import { follow, tileSize, type Cam } from "./camera";
@@ -25,6 +26,10 @@ export interface Game {
   /** Force the proximity prompt to refresh on the next frame. */
   resetPrompt(): void;
   focus(): void;
+  /** Analog movement from the touch joystick, screen axes (+x right, +y down), length ≤ 1. */
+  move(x: number, y: number): void;
+  /** Jump (3D only). */
+  jump?(): void;
 }
 
 const SPEED = 7; // tiles per second
@@ -52,6 +57,8 @@ export function createGame(canvas: HTMLCanvasElement, stage: HTMLElement, posts:
 
   const av: Avatar = { x: START[0], y: START[1], px: START[0], py: START[1], dir: "down", dist: 0, movedAt: -1e9 };
   let path: Pt[] = [], pendingOpen: number | null = null, held: Pt | null = null, t0 = performance.now();
+  /** Direction currently held by the touch joystick (kept apart so keyboard release does not cancel it). */
+  let stickHeld: Pt | null = null;
 
   function frame(now: number) {
     const dt = Math.min(.05, (now - t0) / 1000); t0 = now;
@@ -124,9 +131,14 @@ export function createGame(canvas: HTMLCanvasElement, stage: HTMLElement, posts:
 
   return {
     begin(pos) { av.x = pos[0]; av.y = pos[1]; av.px = av.x; av.py = av.y; av.dir = "down"; path = []; canvas.focus(); },
-    stop() { held = null; path = []; },
+    stop() { held = stickHeld = null; path = []; },
     nearPost,
     resetPrompt() { lastPrompt = -1; },
     focus() { canvas.focus(); },
+    move(x, y) {
+      const d = dominantDir(x, y);
+      if (d && (!stickHeld || d[0] !== stickHeld[0] || d[1] !== stickHeld[1])) { held = stickHeld = d; path = []; pendingOpen = null; }
+      else if (!d && stickHeld) { if (held === stickHeld) held = null; stickHeld = null; }
+    },
   };
 }

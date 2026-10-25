@@ -36,10 +36,10 @@ src/
     props.ts           benda tinggi yang diurutkan kedalamannya (pohon, bendera, tandon, pot)
     sprite.ts, anim.ts avatar pixel-art RPG dan animasi jalan
   logic/               parseNumber, grade, score, calc, compare, csv, csvParse, recap, trail, pin, image
-  ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai
+  ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai, kontrol sentuh (touch.ts, stick.ts)
     teacher/           Mode guru: kunci jawaban, foto pos, isi pos, rekap kelas, pengaturan
 tests/                 Vitest
-e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, blox.spec.ts, helpers.ts)
+e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, touch.spec.ts, blox.spec.ts, helpers.ts)
 public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
 blox/                  prototipe 3D bergaya blok di /blox/ (index.html, main.ts, src/: game3d, world3d, avatar3d, movement, textures)
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
@@ -57,6 +57,7 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
   - Oranye yang dikunci: 60 − 15 × jumlah petunjuk (minimal 10).
   - Pos 0 tidak kena pengurangan petunjuk: 100 atau 60.
 - Pos 1–5 terkunci sampai Pos 0 selesai, kecuali guru menyalakan mode demo.
+- **Kontrol sentuh** (2D dan 3D): joystick kiri bawah dan tombol Buka (serta Lompat di 3D) muncul bila input terakhir berupa sentuhan, dan hilang lagi setelah klik mouse. Di 2D joystick memilih arah grid; di 3D analog dan mengikuti kamera.
 - **Foto pos**: urutan prioritas unggahan guru (IndexedDB) → `public/posts/pos-<id>.jpg` → ilustrasi bawaan. Foto dengan rasio ≥ 2,5 : 1 tampil sebagai panorama.
 
 ## Mode guru

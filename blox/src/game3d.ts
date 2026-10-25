@@ -59,7 +59,8 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
 
   function resize() {
     const r = stage.getBoundingClientRect();
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    // Phones and tablets have weaker GPUs: render a little below their full pixel density.
+    renderer.setPixelRatio(Math.min(matchMedia("(pointer: coarse)").matches ? 1.5 : 2, window.devicePixelRatio || 1));
     renderer.setSize(r.width, r.height, false);
     camera.aspect = r.width / Math.max(1, r.height);
     camera.updateProjectionMatrix();
@@ -72,6 +73,8 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
   let avatar: BlockAvatar | null = null;
   let yaw = 0, pitch = 0.55, dist = 22;
   const held = new Set<string>();
+  /** Touch joystick vector, screen axes (+x right, +y down). */
+  let stick: [number, number] = [0, 0];
   let path: Pt[] = [], pendingOpen: number | null = null;
   let lastTile = "", lastPrompt = -1, t0 = performance.now();
 
@@ -85,6 +88,9 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
     if (S && avatar && !hooks.modalOpen()) {
       let fwd = 0, right = 0;
       for (const k of held) { const v = KEYS[k]; if (v) { fwd += v[0]; right += v[1]; } }
+      // The joystick is analog: a light push walks slower.
+      const analog = !held.size && (stick[0] || stick[1]) ? Math.min(1, Math.hypot(stick[0], stick[1])) : 1;
+      if (!held.size) { fwd = -stick[1]; right = stick[0]; }
       let [dx, dz] = inputDir(fwd, right, yaw);
       if (dx || dz) { path = []; pendingOpen = null; }
       else if (path.length) {
@@ -99,7 +105,7 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
         hooks.openPost(id);
       }
       if (dx || dz) {
-        const step = Math.min(SPEED * dt, path.length ? Math.hypot(path[0][0] + .5 - x, path[0][1] + .5 - z) : Infinity);
+        const step = Math.min(SPEED * analog * dt, path.length ? Math.hypot(path[0][0] + .5 - x, path[0][1] + .5 - z) : Infinity);
         const [nx, nz] = slide(x, z, dx * step, dz * step);
         speed = Math.hypot(nx - x, nz - z) / Math.max(dt, 1e-6);
         x = nx; z = nz;
@@ -146,8 +152,24 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
   // Tap to walk / tap a marker to go to that post; drag to orbit; wheel to zoom.
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   let drag: { x: number; y: number; moved: number } | null = null;
-  canvas.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0 }; canvas.setPointerCapture(e.pointerId); });
+  // Two fingers on the canvas pinch-zoom instead of rotating.
+  const touches = new Map<number, { x: number; y: number }>();
+  let pinch = 0;
+  const spread = () => { const [a, b] = [...touches.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  canvas.addEventListener("pointerdown", (e) => {
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    canvas.setPointerCapture(e.pointerId);
+    if (touches.size === 2) { pinch = spread(); if (drag) drag.moved = Infinity; return; }
+    drag = { x: e.clientX, y: e.clientY, moved: 0 };
+  });
   canvas.addEventListener("pointermove", (e) => {
+    if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touches.size >= 2) {
+      const now = spread();
+      if (pinch && now) dist = Math.min(45, Math.max(9, dist * pinch / now));
+      pinch = now;
+      return;
+    }
     if (!drag) return;
     const mx = e.clientX - drag.x, my = e.clientY - drag.y;
     drag.moved += Math.abs(mx) + Math.abs(my);
@@ -155,7 +177,14 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
     yaw -= mx * 0.006;
     pitch = Math.min(1.35, Math.max(0.12, pitch + my * 0.004));
   });
+  const lift = (e: PointerEvent) => {
+    touches.delete(e.pointerId);
+    if (touches.size < 2) pinch = 0;
+  };
+  canvas.addEventListener("pointercancel", (e) => { lift(e); drag = null; });
   canvas.addEventListener("pointerup", (e) => {
+    lift(e);
+    if (touches.size) return; // still pinching with the other finger
     const wasClick = drag && drag.moved < 6;
     drag = null;
     if (wasClick && hooks.getState() && avatar) tap(e.clientX, e.clientY);
@@ -189,10 +218,11 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
     if (!hooks.getState() || hooks.modalOpen() || tag === "INPUT" || tag === "TEXTAREA") return;
     const k = e.key.toLowerCase();
     if (KEYS[k]) { e.preventDefault(); held.add(k); }
-    if (k === " ") { e.preventDefault(); if (y === 0) vy = JUMP_V; }
+    if (k === " ") { e.preventDefault(); jump(); }
     if (k === "e" || k === "enter") { const p = nearPost(); if (p) hooks.openPost(p.id); }
   });
   document.addEventListener("keyup", (e) => held.delete(e.key.toLowerCase()));
+  function jump() { if (y === 0 && avatar && !hooks.modalOpen()) vy = JUMP_V; }
   window.addEventListener("blur", () => held.clear());
 
   requestAnimationFrame(frame);
@@ -202,13 +232,16 @@ export function createGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, post
       x = pos[0] + .5; z = pos[1] + .5;
       if (!free(x, z)) { x = 17.5; z = 22.5; }
       facing = Math.PI; yaw = 0; pitch = 0.55; path = []; pendingOpen = null;
+      dist = camera.aspect < 1 ? 30 : 22; // pull back on portrait phone screens
       const S = hooks.getState()!;
       if (avatar) scene.remove(avatar.root);
       avatar = new BlockAvatar(S.color, S.name);
       scene.add(avatar.root);
       canvas.focus();
     },
-    stop() { held.clear(); path = []; pendingOpen = null; },
+    stop() { held.clear(); stick = [0, 0]; path = []; pendingOpen = null; },
+    move(sx, sy) { stick = [sx, sy]; if (sx || sy) { path = []; pendingOpen = null; } },
+    jump,
     nearPost,
     resetPrompt() { lastPrompt = -1; },
     focus() { canvas.focus(); },

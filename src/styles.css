@@ -59,7 +59,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 /* Map */
 .stage{position:relative;flex:1;min-height:0}
 canvas#map{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
-.prompt{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px;box-shadow:0 8px 24px var(--map-shadow);max-width:calc(100% - 32px)}
+.prompt{position:absolute;left:50%;transform:translateX(-50%);width:max-content;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px;box-shadow:0 8px 24px var(--map-shadow);max-width:calc(100% - 32px)}
 .prompt .t{min-width:0}
 .prompt .t small{display:block;color:var(--muted);font-size:12px}
 .prompt .t b{font-family:var(--f-display);font-size:16px}
@@ -249,4 +249,19 @@ textarea{width:100%;min-height:110px;font:500 12px var(--f-mono);border:1px soli
   .brand{font-size:17px}
   .dots span{width:19px;height:19px;font-size:10px}
 }
+/* Touch controls (phones/tablets) */
+.touchpad{display:none}
+.touch-on .touchpad{display:block}
+.touchpad .stick{position:absolute;left:max(18px,env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:132px;height:132px;border-radius:50%;background:color-mix(in srgb,var(--surface) 55%,transparent);border:2px solid color-mix(in srgb,var(--ink) 25%,transparent);box-shadow:0 6px 18px var(--map-shadow);touch-action:none;z-index:6;display:grid;place-items:center}
+.touchpad .stick.on{background:color-mix(in srgb,var(--surface) 75%,transparent)}
+.touchpad .stick-knob{width:58px;height:58px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 4px 10px rgba(0,0,0,.3);pointer-events:none}
+.touchpad .touch-btns{position:absolute;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:12px;z-index:6}
+.touch-btn{width:76px;height:76px;border-radius:50%;border:3px solid var(--surface);font:700 15px var(--f-display);box-shadow:0 6px 16px rgba(0,0,0,.3);touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.touch-btn.act{background:var(--accent);color:var(--accent-ink)}
+.touch-btn.jump{background:var(--tape);color:var(--tape-ink);width:64px;height:64px;font-size:13px}
+.touch-btn:active{transform:scale(.94)}
+/* Keep the post prompt and toast clear of the controls */
+.touch-on .prompt{bottom:calc(168px + env(safe-area-inset-bottom,0px))}
+.touch-on button,.touch-on .btn{touch-action:manipulation}
+@media (max-width:820px){.touch-on .help{display:block;left:10px;right:10px;max-width:none;top:8px;font-size:12px;padding:6px 10px}}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
