@@ -8,12 +8,13 @@ import "./styles.css";
 
 import { createGame } from "./game/game";
 import { persist, posts, S, session, teacher } from "./state";
-import { $, modalOpen } from "./ui/dom";
+import { $, modalOpen, toast } from "./ui/dom";
 import { showPrompt, updateHud } from "./ui/hud";
 import { openLog } from "./ui/log";
 import { loadPhotos } from "./ui/photos";
 import { closeAll, closePost, openPost, setGame } from "./ui/post";
 import { initStart } from "./ui/start";
+import { initTouch } from "./ui/touch";
 import { closeTeacher, openTeacher } from "./ui/teacher";
 
 const game = createGame($<HTMLCanvasElement>("map"), $("stage"), posts, {
@@ -36,7 +37,17 @@ function begin(): void {
 
 initStart(begin);
 
-$("promptBtn").onclick = () => { const p = game.nearPost(); if (p) openPost(p.id); };
+/** Open the post next to the avatar (prompt button and the touch "Buka" button). */
+function openNearby(): void {
+  const p = game.nearPost();
+  if (p) openPost(p.id); else toast("Dekati salah satu pos dulu.");
+}
+$("promptBtn").onclick = openNearby;
+initTouch($("stage"), {
+  move: (x, y) => game.move(x, y),
+  interact: openNearby,
+  help: "Geser <b>joystick</b> untuk berjalan, atau ketuk peta. Di dekat pos, tekan <b>Buka</b>.<br>Mulai dari <b>Pos 0</b> di tiang bendera. <small>Ketuk kotak ini untuk menutup.</small>",
+});
 $("openLog").onclick = openLog;
 $("teachBtn").onclick = () => openTeacher();
 $("teachOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "teachOv") closeTeacher(); });

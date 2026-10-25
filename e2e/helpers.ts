@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { devices, expect, type Page } from "@playwright/test";
 import { walk } from "../src/data/map";
 import { POSTS } from "../src/data/posts";
 import { bfs, type Pt } from "../src/game/bfs";
@@ -6,13 +6,25 @@ import { follow, tileSize } from "../src/game/camera";
 
 /* Shared steps for the end-to-end tests. Map clicks reuse the app's own camera and BFS. */
 
+/** Phone profile (touch, mobile viewport) usable with test.use inside a describe block. */
+export const PHONE = (({ defaultBrowserType, ...rest }) => rest)(devices["Pixel 7"]);
+
 export const ANSWERS = ["12,6", "2.307", "4,8", "12", "82,7", "121"];
 
 export async function startGroup(page: Page, name = "Kelompok Uji"): Promise<void> {
   await page.goto("/");
   await page.fill("#gname", name);
-  await page.click("#startForm button[type=submit]");
+  await press(page, "#startForm button[type=submit]");
   await expect(page.locator("#startOv")).toBeHidden();
+}
+
+/**
+ * Tap on touch devices, click otherwise. A mouse click on a phone profile would switch the
+ * app back to mouse mode and hide the on-screen controls.
+ */
+export async function press(page: Page, selector: string): Promise<void> {
+  if (await page.evaluate(() => navigator.maxTouchPoints > 0)) await page.tap(selector);
+  else await page.click(selector);
 }
 
 /** Avatar tile, read from the saved state (pagehide forces a save). */
@@ -90,4 +102,20 @@ export async function unlockTeacher(page: Page, pin = "2468", create = true): Pr
   if (create) await page.fill("#pin2", pin);
   await page.click("#pinForm button[type=submit]");
   await expect(page.locator("#teachBody")).toBeVisible();
+}
+
+/**
+ * Hold the on-screen joystick pushed by (dx, dy) px with a real touch (CDP), so the page
+ * sees pointerType "touch". Returns a function that lifts the finger.
+ */
+export async function holdStick(page: Page, dx: number, dy: number): Promise<() => Promise<void>> {
+  const cdp = await page.context().newCDPSession(page);
+  const r = (await page.locator(".stick").boundingBox())!;
+  const x = r.x + r.width / 2, y = r.y + r.height / 2;
+  const send = (type: "touchStart" | "touchMove" | "touchEnd", points: { x: number; y: number }[]) =>
+    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map((p) => ({ ...p, id: 1 })) });
+  await send("touchStart", [{ x, y }]);
+  await send("touchMove", [{ x: x + dx / 2, y: y + dy / 2 }]);
+  await send("touchMove", [{ x: x + dx, y: y + dy }]);
+  return async () => { await send("touchEnd", []); await cdp.detach(); };
 }

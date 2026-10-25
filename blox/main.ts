@@ -8,12 +8,13 @@ import "../src/styles.css";
 import "./blox.css";
 
 import { persist, posts, S, session, teacher } from "../src/state";
-import { $, modalOpen } from "../src/ui/dom";
+import { $, modalOpen, toast } from "../src/ui/dom";
 import { showPrompt, updateHud } from "../src/ui/hud";
 import { openLog } from "../src/ui/log";
 import { loadPhotos, setBundledBase } from "../src/ui/photos";
 import { closeAll, closePost, openPost, setGame } from "../src/ui/post";
 import { initStart } from "../src/ui/start";
+import { initTouch } from "../src/ui/touch";
 import { closeTeacher, openTeacher } from "../src/ui/teacher";
 import { createGame3D } from "./src/game3d";
 
@@ -45,7 +46,18 @@ function begin(): void {
 
 initStart(begin);
 
-$("promptBtn").onclick = () => { const p = game.nearPost(); if (p) openPost(p.id); };
+/** Open the post next to the avatar (prompt button and the touch "Buka" button). */
+function openNearby(): void {
+  const p = game.nearPost();
+  if (p) openPost(p.id); else toast("Dekati salah satu pos dulu.");
+}
+$("promptBtn").onclick = openNearby;
+initTouch($("stage"), {
+  move: (x, y) => game.move(x, y),
+  interact: openNearby,
+  jump: () => game.jump?.(),
+  help: "Geser <b>joystick</b> untuk berjalan, seret layar untuk memutar kamera, cubit untuk zoom. Di dekat pos, tekan <b>Buka</b>.<br>Mulai dari <b>Pos 0</b> di tiang bendera. <small>Ketuk kotak ini untuk menutup.</small>",
+});
 $("openLog").onclick = openLog;
 $("teachBtn").onclick = () => openTeacher();
 $("teachOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "teachOv") closeTeacher(); });
