@@ -9,6 +9,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 - Tanpa login dan tanpa backend. Semua data hanya tersimpan di browser laptop yang dipakai, tidak dikirim ke mana pun.
   - localStorage: progres kelompok (`geotrails.v1`), pengaturan guru (`geotrails.guru`), isi pos buatan guru (`geotrails.trail`).
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
+  - GeoTrails Peta memakai kunci sendiri: `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.progress.<idPeta>` (progres per peta), dan IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
 - Tidak boleh mengumpulkan data pribadi (UU PDP). Identitas kelompok hanya nama kelompok dan warna avatar. Selain itu yang disimpan hanya isi pelajaran: jawaban, lembar kerja, hasil ukur fisik, refleksi, foto objek, dan isi pos. Setiap kotak teks bebas untuk siswa wajib memuat pengingat "Jangan menulis data pribadi." Tidak ada analytics atau pelacak.
 - Aplikasi harus tetap berjalan offline setelah dibuka sekali. Jangan memakai CDN saat runtime. Font dan aset di-bundle.
 - **Jangan mengubah angka kunci jawaban di `src/data/posts.ts`** tanpa izin eksplisit. Setiap perubahan pada data pos harus lolos `npm test`. Isi pos yang diubah guru lewat Mode guru disimpan terpisah di localStorage dan tidak menyentuh `posts.ts`.
@@ -20,6 +21,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 - Vitest untuk logika: parsing angka, penilaian, skor, kalkulator, CSV, rekap, validasi isi pos, sprite. Playwright untuk alur end-to-end siswa dan guru (`e2e/`), dijalankan terhadap build produksi lewat `vite preview`. Tes e2e juga memastikan tidak ada permintaan ke internet saat aplikasi dipakai.
 - `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id, termasuk prototipe 3D di `dist/blox/`.
 - Prototipe 3D (Blox) memakai three.js dari npm (di-bundle, tanpa CDN). Ia memakai ulang data pos, penilaian, UI, Mode guru, dan progres tersimpan dari versi 2D; hanya lapisan game yang berbeda.
+- GeoTrails Peta (`peta/`) adalah aplikasi terpisah untuk peta buatan guru. Proyek awal (`/` dan `/blox/`) tidak boleh diubah untuk fitur Peta; Peta hanya mengimpor modul dari `src/` dan `blox/`, atau memakai salinan yang disesuaikan di `peta/src/`.
 - `npm run build:single` menghasilkan satu file HTML offline versi 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
 
 ## Struktur
@@ -39,8 +41,11 @@ src/
   ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai, kontrol sentuh (touch.ts, stick.ts)
     teacher/           Mode guru: kunci jawaban, foto pos, isi pos, rekap kelas, pengaturan
 tests/                 Vitest
-e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, touch.spec.ts, blox.spec.ts, helpers.ts)
+e2e/                   Playwright (siswa, guru, touch, blox, peta, peta3d .spec.ts; helpers.ts)
 public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
+peta/                  GeoTrails Peta di /peta/: index.html (siswa: daftar peta lalu bermain 2D), 3d.html (peta yang sama dalam 3D),
+                       guru.html (Portal Guru: daftar peta + editor grid). Kode di peta/src/ (mapdef, basic, validate, store,
+                       draw2d, game2d, world3d, game3d, ui/, portal/)
 blox/                  prototipe 3D bergaya blok di /blox/ (index.html, main.ts, src/: game3d, world3d, avatar3d, movement, textures)
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ```
@@ -65,6 +70,12 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - Tab: Kunci jawaban, Foto pos, Isi pos (edit + ekspor/impor JSON), Rekap kelas (gabungan log CSV, tidak disimpan), Pengaturan (mode demo, hapus progres, ganti PIN).
 - Posisi pos di peta selalu mengikuti pos bawaan. Isi pos buatan guru divalidasi (`logic/trail.ts`) sebelum dipakai.
 
+## GeoTrails Peta (peta buatan guru)
+- Peta "Basic" dibuat saat dimuat dari `src/data/map.ts` dan `src/data/posts.ts` (hanya dibaca). Basic tidak bisa diedit; guru menduplikatnya. Tes memastikan petak yang bisa dilalui dan kunci jawabannya sama persis dengan aslinya.
+- Satu peta = JSON (`MapDef`): petak (rumput, paving, lapangan, paving teduh, taman, kolam), gedung (nama, warna, lantai), objek (pohon, tiang bendera, tandon, pot, ramp, papan), titik mulai, dan 1–12 pos dengan isi dan kunci jawaban masing-masing. Pos 0 tetap pos pembuka (gerbang, petunjuk gratis).
+- Siswa hanya melihat peta yang ditampilkan guru dan lolos pemeriksaan (`peta/src/validate.ts`): ukuran 12–60 × 10–40, gedung tidak bertumpuk, titik mulai bisa dilalui, setiap pos bisa dicapai dari titik mulai, isi pos sesuai aturan yang sama dengan Mode guru.
+- Versi 3D (`peta/3d.html`) selalu dibangun dari data peta yang sama dengan 2D.
+
 ## Uji wajib (tabel jawaban kunci)
 | Pos | Input | Hasil yang diharapkan |
 |---|---|---|
@@ -88,4 +99,4 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - `npm test`: Vitest
 - `npm run typecheck`: pemeriksaan TypeScript (aplikasi dan e2e)
 - `npm run build` / `npm run build:single`
-- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes Blox berjalan di proyek `blox` dengan WebGL perangkat lunak.
+- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes 3D (Blox dan Peta 3D) berjalan di proyek `blox` dengan WebGL perangkat lunak.

@@ -12,3 +12,5 @@ npm run build:single  # dist-single/index.html (satu file, offline)
 ```
 
 Prototipe 3D bergaya blok: buka `/blox/` (saat `npm run dev`: http://localhost:5173/blox/).
+
+GeoTrails Peta (peta buatan guru): `/peta/` untuk siswa, `/peta/guru.html` untuk Portal Guru (editor peta grid), `/peta/3d.html` untuk versi 3D.
