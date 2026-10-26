@@ -8,6 +8,7 @@ import { blankMap, blankPost, setTile, toPosts, walker, type MapDef } from "../p
 import { align, allMaps, deleteMap, freshGroup, getMap, loadProgress, saveMap, saveProgress, studentMaps } from "../peta/src/store";
 import { mapProblems } from "../peta/src/validate";
 import { parseMap } from "../peta/src/portal/io";
+import { cacheClass, cachedClass, classMaps, isClassCode, joinedClass, newClassCode, normalizeCode, setJoinedClass } from "../peta/src/cloud/cache";
 
 // Minimal localStorage for the store tests (Vitest runs in Node).
 const mem = new Map<string, string>();
@@ -150,5 +151,37 @@ describe("impor peta", () => {
   it("menolak berkas yang bukan peta", () => {
     expect(parseMap("{}").problems[0]).toMatch(/bukan peta/);
     expect(parseMap("bukan json").problems[0]).toMatch(/tidak bisa dibaca/);
+  });
+});
+
+describe("kelas online (cache lokal)", () => {
+  beforeEach(() => mem.clear());
+
+  it("kode kelas 6 karakter tanpa huruf/angka yang mirip", () => {
+    for (let i = 0; i < 200; i++) expect(isClassCode(newClassCode())).toBe(true);
+    expect(isClassCode("ABC234")).toBe(true);
+    expect(isClassCode("ABC1O0")).toBe(false);
+    expect(normalizeCode(" abc-234 ")).toBe("ABC234");
+  });
+
+  it("peta kelas tersimpan untuk dipakai offline dan muncul untuk siswa", () => {
+    const m = tiny();
+    setJoinedClass("ABC234");
+    cacheClass("ABC234", "Kelas 9A", [m]);
+    expect(joinedClass()).toBe("ABC234");
+    expect(cachedClass("ABC234")?.name).toBe("Kelas 9A");
+    expect(classMaps().map((x) => x.id)).toEqual([m.id]);
+    expect(classMaps()[0].published).toBe(true);
+    expect(studentMaps().map((x) => x.id)).toEqual(["basic", m.id]);
+    expect(getMap(m.id)?.name).toBe("Uji");
+  });
+
+  it("peta kelas yang bermasalah tidak muncul; keluar kelas menghapus salinannya", () => {
+    setJoinedClass("ABC234");
+    cacheClass("ABC234", "Kelas 9A", [{ ...tiny(), posts: [] }]);
+    expect(classMaps()).toEqual([]);
+    setJoinedClass(null);
+    expect(joinedClass()).toBeNull();
+    expect(cachedClass("ABC234")).toBeNull();
   });
 });
