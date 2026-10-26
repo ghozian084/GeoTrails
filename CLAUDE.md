@@ -6,11 +6,19 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 
 ## Aturan tetap
 - Semua UI dan teks untuk siswa ditulis dalam Bahasa Indonesia. Kode dan komentar boleh berbahasa Inggris.
-- Tanpa login dan tanpa backend. Semua data hanya tersimpan di browser laptop yang dipakai, tidak dikirim ke mana pun.
+- Proyek awal (`/` dan `/blox/`) tanpa login dan tanpa backend: semua datanya hanya tersimpan di browser laptop yang dipakai, tidak dikirim ke mana pun.
+- GeoTrails Peta boleh memakai **Firebase (Firestore + Authentication) khusus untuk fitur kelas**, dengan syarat:
+  - Lokasi data `asia-southeast2` (Jakarta). Google Analytics dan pelacak lain tidak diaktifkan.
+  - Hanya guru yang login (akun Google). Siswa tidak login; mereka cukup memasukkan kode kelas.
+  - Tahap 1 (sekarang): yang tersimpan di Firebase hanya kelas, peta, dan foto buatan guru. Tidak ada data siswa yang dikirim.
+  - Bila kelak hasil kelompok dikirim: hanya nama kelompok, warna, status dan poin per pos, serta jumlah percobaan/petunjuk. Lembar kerja dan refleksi tetap lokal.
+  - Tanpa konfigurasi Firebase atau tanpa internet, Peta tetap berjalan penuh secara lokal.
+  - Setiap perubahan aturan keamanan (`firebase/firestore.rules`) harus lolos `npm run test:rules`.
   - localStorage: progres kelompok (`geotrails.v1`), pengaturan guru (`geotrails.guru`), isi pos buatan guru (`geotrails.trail`).
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
+  - GeoTrails Peta memakai kunci sendiri: `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
 - Tidak boleh mengumpulkan data pribadi (UU PDP). Identitas kelompok hanya nama kelompok dan warna avatar. Selain itu yang disimpan hanya isi pelajaran: jawaban, lembar kerja, hasil ukur fisik, refleksi, foto objek, dan isi pos. Setiap kotak teks bebas untuk siswa wajib memuat pengingat "Jangan menulis data pribadi." Tidak ada analytics atau pelacak.
-- Aplikasi harus tetap berjalan offline setelah dibuka sekali. Jangan memakai CDN saat runtime. Font dan aset di-bundle.
+- Aplikasi harus tetap berjalan offline setelah dibuka sekali. Jangan memakai CDN saat runtime. Font dan aset di-bundle. SDK Firebase di-bundle dari npm dan hanya dimuat saat fitur kelas dipakai. Satu-satunya pengecualian: popup login Google guru di Portal Guru memuat skrip dari Google.
 - **Jangan mengubah angka kunci jawaban di `src/data/posts.ts`** tanpa izin eksplisit. Setiap perubahan pada data pos harus lolos `npm test`. Isi pos yang diubah guru lewat Mode guru disimpan terpisah di localStorage dan tidak menyentuh `posts.ts`.
 - Progres yang tersimpan dari versi lama harus tetap bisa dilanjutkan. Bila menambah kolom pada state, isi nilai bawaannya di `normalize()` (`src/store.ts`).
 - Kerjakan perubahan kecil dan bertahap. Satu fitur, lalu uji, lalu commit.
@@ -20,6 +28,8 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 - Vitest untuk logika: parsing angka, penilaian, skor, kalkulator, CSV, rekap, validasi isi pos, sprite. Playwright untuk alur end-to-end siswa dan guru (`e2e/`), dijalankan terhadap build produksi lewat `vite preview`. Tes e2e juga memastikan tidak ada permintaan ke internet saat aplikasi dipakai.
 - `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id, termasuk prototipe 3D di `dist/blox/`.
 - Prototipe 3D (Blox) memakai three.js dari npm (di-bundle, tanpa CDN). Ia memakai ulang data pos, penilaian, UI, Mode guru, dan progres tersimpan dari versi 2D; hanya lapisan game yang berbeda.
+- GeoTrails Peta (`peta/`) adalah aplikasi terpisah untuk peta buatan guru. Proyek awal (`/` dan `/blox/`) tidak boleh diubah untuk fitur Peta; Peta hanya mengimpor modul dari `src/` dan `blox/`, atau memakai salinan yang disesuaikan di `peta/src/`.
+- Firebase: aturan di `firebase/firestore.rules` (tanpa Cloud Storage; foto disimpan di Firestore). Konfigurasi web lewat variabel `VITE_FIREBASE_*` (lihat `.env.example`); untuk produksi di `.env.production` (proyek `gen-lang-client-0151740306`, database Firestore bernama `geotrails` di asia-southeast2, terpisah dari database aplikasi lain di proyek itu). Pengembangan dan tes memakai Firebase Emulator dengan proyek `demo-geotrails` (`.env.emulator`), tidak pernah proyek sungguhan.
 - `npm run build:single` menghasilkan satu file HTML offline versi 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
 
 ## Struktur
@@ -38,9 +48,13 @@ src/
   logic/               parseNumber, grade, score, calc, compare, csv, csvParse, recap, trail, pin, image
   ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai, kontrol sentuh (touch.ts, stick.ts)
     teacher/           Mode guru: kunci jawaban, foto pos, isi pos, rekap kelas, pengaturan
+firebase/              firestore.rules + rules.test.ts (tes aturan keamanan di emulator)
 tests/                 Vitest
-e2e/                   Playwright (siswa.spec.ts, guru.spec.ts, touch.spec.ts, blox.spec.ts, helpers.ts)
+e2e/                   Playwright (siswa, guru, touch, blox, peta, peta3d .spec.ts; helpers.ts); e2e/cloud/ untuk fitur kelas di emulator
 public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
+peta/                  GeoTrails Peta di /peta/: index.html (siswa: daftar peta lalu bermain 2D), 3d.html (peta yang sama dalam 3D),
+                       guru.html (Portal Guru: daftar peta + editor grid). Kode di peta/src/ (mapdef, basic, validate, store,
+                       draw2d, game2d, world3d, game3d, ui/, portal/, cloud/ (config, cache, client Firebase))
 blox/                  prototipe 3D bergaya blok di /blox/ (index.html, main.ts, src/: game3d, world3d, avatar3d, movement, textures)
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ```
@@ -65,6 +79,13 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - Tab: Kunci jawaban, Foto pos, Isi pos (edit + ekspor/impor JSON), Rekap kelas (gabungan log CSV, tidak disimpan), Pengaturan (mode demo, hapus progres, ganti PIN).
 - Posisi pos di peta selalu mengikuti pos bawaan. Isi pos buatan guru divalidasi (`logic/trail.ts`) sebelum dipakai.
 
+## GeoTrails Peta (peta buatan guru)
+- Peta "Basic" dibuat saat dimuat dari `src/data/map.ts` dan `src/data/posts.ts` (hanya dibaca). Basic tidak bisa diedit; guru menduplikatnya. Tes memastikan petak yang bisa dilalui dan kunci jawabannya sama persis dengan aslinya.
+- Satu peta = JSON (`MapDef`): petak (rumput, paving, lapangan, paving teduh, taman, kolam), gedung (nama, warna, lantai), objek (pohon, tiang bendera, tandon, pot, ramp, papan), titik mulai, dan 1–12 pos dengan isi dan kunci jawaban masing-masing. Pos 0 tetap pos pembuka (gerbang, petunjuk gratis).
+- Siswa hanya melihat peta yang ditampilkan guru dan lolos pemeriksaan (`peta/src/validate.ts`): ukuran 12–60 × 10–40, gedung tidak bertumpuk, titik mulai bisa dilalui, setiap pos bisa dicapai dari titik mulai, isi pos sesuai aturan yang sama dengan Mode guru.
+- Versi 3D (`peta/3d.html`) selalu dibangun dari data peta yang sama dengan 2D.
+- Kelas online: guru membuat kelas (kode 6 karakter) dan menerbitkan peta beserta fotonya; siswa memasukkan kode kelas untuk memuat peta itu. Peta kelas disimpan di laptop siswa agar tetap bisa dipakai offline. Model data: `classes/{kode}`, `classes/{kode}/maps/{idPeta}`, `.../photos/{uidPos}`.
+
 ## Uji wajib (tabel jawaban kunci)
 | Pos | Input | Hasil yang diharapkan |
 |---|---|---|
@@ -88,4 +109,6 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - `npm test`: Vitest
 - `npm run typecheck`: pemeriksaan TypeScript (aplikasi dan e2e)
 - `npm run build` / `npm run build:single`
-- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes Blox berjalan di proyek `blox` dengan WebGL perangkat lunak.
+- `npm run test:rules`: tes aturan keamanan Firestore (menjalankan emulator)
+- `npm run e2e:cloud`: tes kelas online Peta di emulator (guru menerbitkan, siswa memuat)
+- `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes 3D (Blox dan Peta 3D) berjalan di proyek `blox` dengan WebGL perangkat lunak.
