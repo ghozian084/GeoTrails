@@ -9,7 +9,7 @@ import "../blox/blox.css";
 import "./peta.css";
 
 import type { GroupState } from "../src/types";
-import { $, toast } from "../src/ui/dom";
+import { $, esc, toast } from "../src/ui/dom";
 import { initTouch } from "../src/ui/touch";
 import { createMapGame3D } from "./src/game3d";
 import { toPosts, type MapDef } from "./src/mapdef";
@@ -27,7 +27,19 @@ await Promise.all(['700 56px "Chakra Petch"', '700 52px "Atkinson Hyperlegible"'
 
 const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden;
 
+/** Show why 3D could not start (instead of a button that seems to do nothing) and offer 2D. */
+function fail3d(map: MapDef | null, e: unknown): void {
+  console.error(e);
+  const el = $("err3d"), msg = e instanceof Error ? e.message : String(e);
+  el.innerHTML = `Versi 3D belum bisa berjalan di perangkat ini. Pakai <a href="./${map ? `?map=${encodeURIComponent(map.id)}` : ""}">versi 2D</a>.<small>Pesan teknis: ${esc(msg)}</small>`;
+  el.hidden = false;
+}
+
 function begin(map: MapDef, S: GroupState): void {
+  try { start(map, S); } catch (e) { fail3d(map, e); }
+}
+
+function start(map: MapDef, S: GroupState): void {
   app.map = map; app.posts = toPosts(map); app.S = S;
   const game = createMapGame3D($<HTMLCanvasElement>("map"), $("stage"), map, {
     getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo,
@@ -54,6 +66,8 @@ function begin(map: MapDef, S: GroupState): void {
   void loadPhotos(map);
 }
 
+window.addEventListener("error", (e) => { if (!$("startOv").hidden) fail3d(app.map ?? null, e.error ?? e.message); });
+window.addEventListener("unhandledrejection", (e) => { if (!$("startOv").hidden) fail3d(app.map ?? null, e.reason); });
 initStart(begin);
 $("openLog").onclick = openLog;
 $("mapsBtn").onclick = () => { persist(); location.href = location.pathname; };
