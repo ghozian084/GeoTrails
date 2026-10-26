@@ -62,8 +62,11 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
     </section>`;
 
   el.querySelectorAll<HTMLElement>(".portal-card").forEach((card, i) => card.querySelector(".portal-thumb")!.appendChild(minimap(maps[i], 5)));
-  // Redraw the whole list on class changes, but never while the editor is open.
-  classSection($("classBox"), () => { if (document.getElementById("classBox")) showList(el, teacher); });
+  // Class changes redraw only the class box (so an open "Peta baru" form survives a sign-in);
+  // copying a class map to this laptop redraws the whole list. Never while the editor is open.
+  const box = $("classBox");
+  const drawClasses = (): void => { if (box.isConnected) classSection(box, drawClasses, () => showList(el, teacher)); };
+  drawClasses();
 
   const form = $<HTMLFormElement>("newForm");
   $("newMap").onclick = () => { form.hidden = false; $("nmName").focus(); };

@@ -12,6 +12,8 @@ import type { MapDef } from "../mapdef";
  */
 
 let teacher: Teacher | null = null, watching = false, busy = "";
+/** Redraw of the most recently rendered class box (the sign-in watcher outlives each render). */
+let redraw = (): void => {};
 let classes: CloudClass[] = [];
 const published = new Map<string, PublishedMap[]>();
 
@@ -28,7 +30,8 @@ const sameAsPublished = (m: MapDef, pm: PublishedMap) => {
   try { return JSON.stringify({ ...JSON.parse(pm.json), published: m.published }) === JSON.stringify({ ...m, builtIn: undefined }); } catch { return false; }
 };
 
-export function classSection(el: HTMLElement, rerender: () => void): void {
+export function classSection(el: HTMLElement, rerender: () => void, mapsChanged: () => void): void {
+  redraw = rerender;
   if (!cloudEnabled) {
     el.innerHTML = `<h2>Kelas online</h2><small>Belum aktif. Isi konfigurasi Firebase (lihat README) agar peta bisa diterbitkan ke laptop siswa dengan kode kelas. Tanpa itu, bagikan peta lewat Ekspor/Impor JSON.</small>`;
     return;
@@ -40,7 +43,7 @@ export function classSection(el: HTMLElement, rerender: () => void): void {
     void loadCloud().then((c) => c.watchTeacher(async (t) => {
       teacher = t;
       if (t) await refresh(); else { classes = []; published.clear(); }
-      rerender();
+      redraw();
     }));
   }
   const maps = customMaps().filter((m) => mapProblems(m).length === 0);
@@ -104,7 +107,7 @@ export function classSection(el: HTMLElement, rerender: () => void): void {
       if (!pm) return;
       try {
         const m: MapDef = { ...JSON.parse(pm.json), published: false };
-        saveMap(m); toast(`"${m.name}" disalin ke laptop ini.`); rerender();
+        saveMap(m); toast(`"${m.name}" disalin ke laptop ini.`); mapsChanged();
       } catch { toast("Data peta di kelas rusak."); }
     }
   });
