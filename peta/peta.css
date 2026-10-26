@@ -13,6 +13,8 @@
 .map-info .map-saved{color:var(--accent);font-weight:700}
 .chosen{margin:0 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .chosen .btn{padding:3px 10px;font-size:13px}
+.err3d{margin:0 0 14px;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;color:var(--ink)}
+.err3d small{display:block;margin-top:4px;color:var(--muted);word-break:break-word}
 .post .media .frame.no-photo{min-height:260px;padding:24px;text-align:center;color:var(--muted)}
 .no-photo>div{display:grid;gap:6px;max-width:34ch}
 .no-photo b{font-family:var(--f-display);font-size:18px;color:var(--ink)}

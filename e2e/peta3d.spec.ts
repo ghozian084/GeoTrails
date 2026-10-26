@@ -30,3 +30,18 @@ test("Peta 3D: progres dari halaman 2D ikut, tombol 2D kembali ke peta yang sama
   await expect(page.locator("#promptTitle")).toHaveText("Tiang Bendera", { timeout: 15_000 });
   await expect(page.locator("#to2d")).toHaveAttribute("href", "./?map=basic");
 });
+
+test("Peta 3D: bila WebGL gagal, tampil pesan dan tautan ke versi 2D", async ({ page }) => {
+  await page.addInitScript(() => {
+    const get = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, id: string, ...a: unknown[]) {
+      return /webgl/.test(id) ? null : (get as (...x: unknown[]) => unknown).call(this, id, ...a);
+    } as typeof get;
+  });
+  await page.goto("/peta/3d.html?map=basic");
+  await page.fill("#gname", "Tanpa WebGL");
+  await page.click("#startForm button[type=submit]");
+  await expect(page.locator("#err3d")).toContainText("Versi 3D belum bisa berjalan di perangkat ini");
+  await expect(page.locator("#err3d a")).toHaveAttribute("href", "./?map=basic");
+  await expect(page.locator("#startOv")).toBeVisible();
+});
