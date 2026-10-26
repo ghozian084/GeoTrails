@@ -7,6 +7,7 @@ import { minimap } from "../minimap";
 import { allMaps, deleteMap, saveMap } from "../store";
 import { mapProblems, SIZE } from "../validate";
 import { showEditor } from "./editor";
+import { classSection } from "./classes";
 import { exportMap, parseMap } from "./io";
 
 /* Portal home: every map with its status and actions. */
@@ -53,6 +54,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
         </div>
       </article>`;
     }).join("")}</div>
+    <section class="portal-settings portal-classes" id="classBox"></section>
     <section class="portal-settings">
       <h2>Pengaturan</h2>
       <label class="check"><input type="checkbox" id="demoChk" ${teacher.demo ? "checked" : ""}> Mode demo: semua pos terbuka tanpa menyelesaikan Pos 0</label>
@@ -60,6 +62,8 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
     </section>`;
 
   el.querySelectorAll<HTMLElement>(".portal-card").forEach((card, i) => card.querySelector(".portal-thumb")!.appendChild(minimap(maps[i], 5)));
+  // Redraw the whole list on class changes, but never while the editor is open.
+  classSection($("classBox"), () => { if (document.getElementById("classBox")) showList(el, teacher); });
 
   const form = $<HTMLFormElement>("newForm");
   $("newMap").onclick = () => { form.hidden = false; $("nmName").focus(); };

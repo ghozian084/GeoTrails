@@ -19,7 +19,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /(blox|peta3d)\.spec\.ts/,
+      testIgnore: [/(blox|peta3d)\.spec\.ts/, /cloud\//],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } },
     },
     {
@@ -27,6 +27,7 @@ export default defineConfig({
       // Kept separate because these flags slow down the 2D pages.
       name: "blox",
       testMatch: /(blox|peta3d)\.spec\.ts/,
+      testIgnore: /cloud\//,
       fullyParallel: false,
       use: {
         ...devices["Desktop Chrome"],

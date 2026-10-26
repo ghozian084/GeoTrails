@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type Auth } from "firebase/auth";
+import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut, type Auth } from "firebase/auth";
 import {
   collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where,
   type Firestore,
@@ -45,6 +45,16 @@ export function watchTeacher(cb: (t: Teacher | null) => void): () => void {
 export async function signInTeacher(): Promise<void> {
   init();
   await signInWithPopup(auth, new GoogleAuthProvider());
+}
+
+/**
+ * Emulator-only sign-in for the automated tests: the Google popup needs scripts from
+ * apis.google.com, which the test machines cannot reach. Refuses to run against a real project.
+ */
+export async function signInForTests(sub: string, name: string): Promise<void> {
+  if (!emulatorHost) throw new Error("Hanya untuk emulator.");
+  init();
+  await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })));
 }
 
 export async function signOutTeacher(): Promise<void> {

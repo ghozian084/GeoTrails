@@ -16,3 +16,10 @@
 .post .media .frame.no-photo{min-height:260px;padding:24px;text-align:center;color:var(--muted)}
 .no-photo>div{display:grid;gap:6px;max-width:34ch}
 .no-photo b{font-family:var(--f-display);font-size:18px;color:var(--ink)}
+.class-join{display:grid;gap:4px;margin:0 0 10px;padding:10px;border:1px dashed var(--line);border-radius:10px}
+.class-join .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.class-join label{font-weight:700;font-size:13px;color:var(--muted)}
+.class-join input{font:700 16px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;width:9ch;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
+.class-join small{color:var(--muted);font-size:13px}
+.class-join small.bad{color:var(--bad)}
+.class-join .cls-code{font:700 14px var(--f-mono);letter-spacing:.1em;background:var(--tape);color:var(--tape-ink);padding:1px 8px;border-radius:5px}
