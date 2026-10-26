@@ -4,3 +4,7 @@ dist-single/
 test-results/
 playwright-report/
 *.log
+.env.local
+.env.*.local
+dist-emulator/
+*-debug.log
