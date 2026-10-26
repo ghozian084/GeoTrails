@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // GeoTrails Peta: teachers publish maps to a class; anyone with the class code can read them.
-// No student data is stored (stage 1).
+// No student data is stored (stage 1). Post photos are stored here too (one document per photo),
+// so no Cloud Storage bucket, Blaze plan or CORS setup is needed.
 service cloud.firestore {
   match /databases/{db}/documents {
 
@@ -36,6 +37,16 @@ service cloud.firestore {
           && request.resource.data.photos is list && request.resource.data.photos.size() <= 12
           && request.resource.data.updatedAt is timestamp;
         allow delete: if ownsClass(code);
+
+        // One JPEG per post, base64-encoded (documents are limited to 1 MiB).
+        match /photos/{uid} {
+          allow read: if true;
+          allow create, update: if ownsClass(code)
+            && request.resource.data.keys().hasOnly(['data', 'type'])
+            && request.resource.data.type == 'image/jpeg'
+            && request.resource.data.data is string && request.resource.data.data.size() < 950000;
+          allow delete: if ownsClass(code);
+        }
       }
     }
   }

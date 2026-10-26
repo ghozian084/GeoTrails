@@ -8,21 +8,17 @@ let env: RulesTestEnvironment;
 const now = () => new Date();
 const cls = (ownerUid: string, name = "Kelas 9A") => ({ name, ownerUid, createdAt: now() });
 const mapDoc = (extra: Record<string, unknown> = {}) => ({ name: "Taman", json: "{}", photos: [], updatedAt: now(), ...extra });
-const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
-/** Upload tasks are thenables; the assert helpers want a real promise. */
-const done = (task: PromiseLike<unknown>) => Promise.resolve(task);
+const photo = (extra: Record<string, unknown> = {}) => ({ data: "/9j/2Q==", type: "image/jpeg", ...extra });
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
     projectId: "demo-geotrails",
     firestore: { rules: readFileSync("firebase/firestore.rules", "utf8"), host: "127.0.0.1", port: 8080 },
-    storage: { rules: readFileSync("firebase/storage.rules", "utf8"), host: "127.0.0.1", port: 9199 },
   });
 });
 afterAll(async () => { await env.cleanup(); });
 beforeEach(async () => {
   await env.clearFirestore();
-  await env.clearStorage();
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().doc("classes/ABC234").set(cls("guru-a"));
     await ctx.firestore().doc("classes/ABC234/maps/m-1").set(mapDoc());
@@ -84,17 +80,20 @@ describe("peta di kelas", () => {
 });
 
 describe("foto pos", () => {
-  const path = "owners/guru-a/classes/ABC234/maps/m-1/p-1.jpg";
+  const path = "classes/ABC234/maps/m-1/photos/p-1";
 
-  it("guru mengunggah JPEG di jalurnya sendiri; siapa pun bisa membaca", async () => {
-    await assertSucceeds(done(env.authenticatedContext("guru-a").storage().ref(path).put(jpeg, { contentType: "image/jpeg" })));
-    await assertSucceeds(env.unauthenticatedContext().storage().ref(path).getDownloadURL());
+  it("pemilik kelas menyimpan foto JPEG; siapa pun dengan kode bisa membaca", async () => {
+    await assertSucceeds(env.authenticatedContext("guru-a").firestore().doc(path).set(photo()));
+    await assertSucceeds(env.unauthenticatedContext().firestore().doc(path).get());
+    await assertSucceeds(env.authenticatedContext("guru-a").firestore().doc(path).delete());
   });
 
-  it("guru lain dan pengunjung tidak bisa menulis di jalur guru; hanya JPEG", async () => {
-    await assertFails(done(env.authenticatedContext("guru-b").storage().ref(path).put(jpeg, { contentType: "image/jpeg" })));
-    await assertFails(done(env.unauthenticatedContext().storage().ref(path).put(jpeg, { contentType: "image/jpeg" })));
-    await assertFails(done(env.authenticatedContext("guru-a").storage().ref("owners/guru-a/classes/ABC234/maps/m-1/x.html").put(jpeg, { contentType: "text/html" })));
-    await assertFails(done(env.authenticatedContext("guru-a").storage().ref("lain/p.jpg").put(jpeg, { contentType: "image/jpeg" })));
+  it("guru lain dan pengunjung tidak bisa menulis; hanya JPEG di bawah batas ukuran", async () => {
+    await assertFails(env.authenticatedContext("guru-b").firestore().doc(path).set(photo()));
+    await assertFails(env.unauthenticatedContext().firestore().doc(path).set(photo()));
+    const a = env.authenticatedContext("guru-a").firestore();
+    await assertFails(a.doc(path).set(photo({ type: "text/html" })));
+    await assertFails(a.doc(path).set(photo({ data: "x".repeat(950_001) })));
+    await assertFails(a.doc(path).set(photo({ nama: "Budi" })));
   });
 });
