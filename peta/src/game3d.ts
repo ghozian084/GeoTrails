@@ -25,9 +25,16 @@ export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, m
   const free = (x: number, z: number) => freeOn(walk, x, z);
   const slide = (x: number, z: number, dx: number, dz: number) => slideOn(walk, x, z, dx, dz);
   const span = Math.max(map.cols, map.rows) * U;
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  // Phones get lighter settings (no MSAA, smaller shadow map and ground texture): mobile
+  // browsers drop the WebGL context when a page uses too much GPU memory.
+  const phone = matchMedia("(pointer: coarse)").matches;
+  const attrs: WebGLContextAttributes = { antialias: !phone, alpha: false, depth: true, stencil: false, premultipliedAlpha: true, preserveDrawingBuffer: false, powerPreference: "default" };
+  const gl = canvas.getContext("webgl2", attrs);
+  // A lost context would otherwise surface as an obscure error deep inside three.js.
+  if (!gl || gl.isContextLost()) throw new Error(gl ? "Konteks WebGL hilang (memori grafis HP penuh atau WebGL diblokir browser)." : "WebGL 2 tidak tersedia di browser ini.");
+  const renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: !phone });
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   canvas.tabIndex = 0;
 
   const scene = new THREE.Scene();
@@ -38,12 +45,12 @@ export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, m
   sun.position.set(map.cols * U / 2 - 50, 130, map.rows * U / 2 + 62);
   sun.target.position.set(map.cols * U / 2, 0, map.rows * U / 2);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(phone ? 1024 : 2048, phone ? 1024 : 2048);
   Object.assign(sun.shadow.camera, { left: -span * .7, right: span * .7, top: span * .7, bottom: -span * .7, near: 10, far: 400 });
   sun.shadow.bias = -0.0008;
   scene.add(hemi, sun, sun.target);
 
-  const world = buildMapWorld(scene, map, posts);
+  const world = buildMapWorld(scene, map, posts, phone ? 32 : 64);
 
   // Light / dark follows the system like the rest of the app.
   const dark = matchMedia("(prefers-color-scheme: dark)");

@@ -33,6 +33,8 @@ function fail3d(map: MapDef | null, e: unknown): void {
   const el = $("err3d"), msg = e instanceof Error ? e.message : String(e);
   el.innerHTML = `Versi 3D belum bisa berjalan di perangkat ini. Pakai <a href="./${map ? `?map=${encodeURIComponent(map.id)}` : ""}">versi 2D</a>.<small>Pesan teknis: ${esc(msg)}</small>`;
   el.hidden = false;
+  // A failed attempt can leave the canvas with a dead WebGL context: give the next try a fresh one.
+  const old = $("map"); old.replaceWith(old.cloneNode());
 }
 
 function begin(map: MapDef, S: GroupState): void {
