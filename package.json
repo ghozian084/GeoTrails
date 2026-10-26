@@ -30,5 +30,8 @@
     "@fontsource/jetbrains-mono": "^5.3.0",
     "firebase": "^13.1.0",
     "three": "^0.186.1"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6"
   }
 }
