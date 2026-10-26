@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "blox", "tests", "vite.config.ts"]
+  "include": ["src", "blox", "peta", "tests", "vite.config.ts"]
 }
