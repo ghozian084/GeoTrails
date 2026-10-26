@@ -48,8 +48,9 @@ function stud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, ba
 }
 
 /** Studded baseplate texture from the map tiles; water is flat with ripples. */
-function groundTexture(m: MapDef): THREE.CanvasTexture {
-  const P = 64, c = document.createElement("canvas");
+/** `P` = pixels per tile (phones use a smaller texture to save GPU memory). */
+function groundTexture(m: MapDef, P: number): THREE.CanvasTexture {
+  const c = document.createElement("canvas"), k = P / 64;
   c.width = m.cols * P; c.height = m.rows * P;
   const ctx = c.getContext("2d")!;
   for (let y = 0; y < m.rows; y++) for (let x = 0; x < m.cols; x++) {
@@ -57,16 +58,16 @@ function groundTexture(m: MapDef): THREE.CanvasTexture {
     const base = t === "g" && (x + y) % 2 ? "#3F8A41" : BASE[t];
     ctx.fillStyle = base; ctx.fillRect(x * P, y * P, P, P);
     if (t === "a") {
-      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(x * P + 12, y * P + 22); ctx.quadraticCurveTo(x * P + 24, y * P + 16, x * P + 36, y * P + 22); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 3 * k;
+      ctx.beginPath(); ctx.moveTo(x * P + 12 * k, y * P + 22 * k); ctx.quadraticCurveTo(x * P + 24 * k, y * P + 16 * k, x * P + 36 * k, y * P + 22 * k); ctx.stroke();
       continue;
     }
-    ctx.strokeStyle = hex(base, -0.08); ctx.lineWidth = 2; ctx.strokeRect(x * P + 1, y * P + 1, P - 2, P - 2);
+    ctx.strokeStyle = hex(base, -0.08); ctx.lineWidth = 2 * k; ctx.strokeRect(x * P + k, y * P + k, P - 2 * k, P - 2 * k);
     for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) stud(ctx, x * P + P / 4 + i * P / 2, y * P + P / 4 + j * P / 2, P * .13, base);
   }
   // Court markings, as in 2D: inside each sufficiently large court area.
   const seen = new Uint8Array(m.cols * m.rows);
-  ctx.strokeStyle = "#F8F8F8"; ctx.lineWidth = 6;
+  ctx.strokeStyle = "#F8F8F8"; ctx.lineWidth = 6 * k;
   for (let y = 0; y < m.rows; y++) for (let x = 0; x < m.cols; x++) {
     if (seen[y * m.cols + x] || tileAt(m, x, y) !== "c") continue;
     const b = { x0: x, y0: y, x1: x, y1: y }, q: [number, number][] = [[x, y]];
@@ -103,9 +104,9 @@ function doorSide(m: MapDef, b: MapBuilding): "s" | "n" | "e" | "w" {
   return sides.reduce((a, c) => (c[1] > a[1] ? c : a))[0];
 }
 
-export function buildMapWorld(scene: THREE.Scene, m: MapDef, posts: Post[]): World {
+export function buildMapWorld(scene: THREE.Scene, m: MapDef, posts: Post[], tilePx = 64): World {
   const W = m.cols * U, D = m.rows * U;
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshLambertMaterial({ map: groundTexture(m) }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshLambertMaterial({ map: groundTexture(m, tilePx) }));
   ground.rotation.x = -Math.PI / 2; ground.position.set(W / 2, 0, D / 2); ground.receiveShadow = true;
   const apron = new THREE.Mesh(new THREE.PlaneGeometry(W * 4, D * 4), lambert("#3E7F40"));
   apron.rotation.x = -Math.PI / 2; apron.position.set(W / 2, -0.05, D / 2); apron.receiveShadow = true;

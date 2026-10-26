@@ -45,3 +45,24 @@ test("Peta 3D: bila WebGL gagal, tampil pesan dan tautan ke versi 2D", async ({ 
   await expect(page.locator("#err3d a")).toHaveAttribute("href", "./?map=basic");
   await expect(page.locator("#startOv")).toBeVisible();
 });
+
+test("Peta 3D: konteks WebGL yang hilang dilaporkan, lalu percobaan berikutnya memakai kanvas baru", async ({ page }) => {
+  await page.addInitScript(() => {
+    const get = HTMLCanvasElement.prototype.getContext;
+    let first = true;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, id: string, ...a: unknown[]) {
+      const ctx = (get as (...x: unknown[]) => unknown).call(this, id, ...a);
+      // Like a phone browser that dropped the page's GPU memory: the first WebGL context is already lost.
+      if (id === "webgl2" && first && ctx) { first = false; (ctx as WebGL2RenderingContext).getExtension("WEBGL_lose_context")?.loseContext(); }
+      return ctx;
+    } as typeof get;
+  });
+  await page.goto("/peta/3d.html?map=basic");
+  await page.fill("#gname", "Konteks Hilang");
+  await page.click("#startForm button[type=submit]");
+  await expect(page.locator("#err3d")).toContainText("Konteks WebGL hilang");
+  await page.click("#startForm button[type=submit]");
+  await expect(page.locator("#startOv")).toBeHidden();
+  await expect(page.locator("#groupName")).toHaveText("Konteks Hilang");
+  expect(await page.evaluate(() => document.querySelector<HTMLCanvasElement>("#map")!.getContext("webgl2")?.isContextLost())).toBe(false);
+});
