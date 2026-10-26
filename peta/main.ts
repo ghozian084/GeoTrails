@@ -21,6 +21,11 @@ import { initStart } from "./src/ui/start";
 
 /* GeoTrails Peta: pick a map (Basic or a teacher-made one), then play it in 2D. */
 
+// Hosts like Vercel serve this page at /peta (no trailing slash), where relative links such as
+// "3d.html" would resolve to the site root. Add the slash so they stay inside /peta/.
+if (!location.pathname.endsWith("/") && !location.pathname.endsWith(".html"))
+  history.replaceState(history.state, "", `${location.pathname}/${location.search}${location.hash}`);
+
 const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden;
 
 function begin(map: MapDef, S: GroupState): void {

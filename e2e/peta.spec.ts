@@ -104,3 +104,15 @@ test("guru: ekspor lalu impor peta, salinan Basic bisa diedit", async ({ page })
   await expect(page.locator("#edName")).toHaveValue("Basic (salinan)");
   await expect(page.locator(".problems .ok")).toBeVisible();
 });
+
+test("siswa: tautan 3D tetap di /peta/ walau halaman dibuka tanpa garis miring (seperti di Vercel)", async ({ page, baseURL }) => {
+  // Vercel serves peta/index.html at /peta (no redirect to /peta/); reproduce that.
+  const html = await (await page.request.get("/peta/")).text();
+  await page.route(/\/peta(\?.*)?$/, (r) => r.fulfill({ contentType: "text/html", body: html }));
+  await page.goto("/peta");
+  await expect(page).toHaveURL(`${baseURL}/peta/`);
+  await page.locator(".map-card", { hasText: "Basic" }).click();
+  await page.fill("#gname", "Kelompok Vercel");
+  await page.click("#startForm button[type=submit]");
+  expect(await page.locator("#to3d").evaluate((a) => (a as HTMLAnchorElement).href)).toBe(`${baseURL}/peta/3d.html?map=basic`);
+});
