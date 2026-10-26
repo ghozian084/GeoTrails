@@ -1,0 +1,18 @@
+/* Additions for the Peta pages; everything else comes from src/styles.css. */
+.map-tag{font:700 12px var(--f-mono);background:var(--surface-2);border:1px solid var(--line);color:var(--ink);padding:3px 8px;border-radius:6px;white-space:nowrap;max-width:22ch;overflow:hidden;text-overflow:ellipsis}
+.bar a.btn{text-decoration:none}
+.pick-h{font-family:var(--f-display);font-size:18px;margin:0 0 10px}
+.map-list{display:grid;gap:10px;margin-bottom:6px;max-height:min(46vh,420px);overflow:auto;padding:2px}
+.map-card{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:8px}
+.map-card:hover,.map-card:focus-visible{border-color:var(--accent)}
+.map-thumb{flex:none;width:112px;height:76px;border-radius:6px;overflow:hidden;background:var(--surface);display:grid;place-items:center}
+.map-thumb canvas{max-width:100%;max-height:100%;display:block}
+.map-info{display:grid;gap:2px;min-width:0}
+.map-info b{font-family:var(--f-display);font-size:17px}
+.map-info small{color:var(--muted);font-size:13px}
+.map-info .map-saved{color:var(--accent);font-weight:700}
+.chosen{margin:0 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chosen .btn{padding:3px 10px;font-size:13px}
+.post .media .frame.no-photo{min-height:260px;padding:24px;text-align:center;color:var(--muted)}
+.no-photo>div{display:grid;gap:6px;max-width:34ch}
+.no-photo b{font-family:var(--f-display);font-size:18px;color:var(--ink)}
