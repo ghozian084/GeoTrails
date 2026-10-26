@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GeoTrails · Portal Guru</title>
+</head>
+<body class="portal">
+<div class="app">
+  <div class="bar">
+    <div class="brand" aria-label="GeoTrails Portal Guru">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="var(--accent)"/><path d="M8 23 L15 9 L24 23 Z" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linejoin="round"/><path d="M15 23 V15 M15 23 L20 23" stroke="var(--tape)" stroke-width="2.4" stroke-linecap="round"/></svg>
+      Geo<span>Trails</span> <span class="portal-tag">Portal Guru</span>
+    </div>
+    <span class="demo-badge" id="demoBadge" hidden title="Semua pos terbuka untuk siswa">MODE DEMO</span>
+    <div class="spacer"></div>
+    <a class="btn ghost" href="./">Halaman siswa</a>
+    <button class="btn" id="lockBtn" hidden>Kunci</button>
+  </div>
+  <main class="portal-main" id="main"></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="./guru.ts"></script>
+</body>
+</html>

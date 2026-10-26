@@ -3,14 +3,19 @@ import { COLORS } from "../../../src/store";
 import type { GroupState } from "../../../src/types";
 import type { MapDef } from "../mapdef";
 import { minimap } from "../minimap";
-import { freshGroup, loadProgress, saveProgress, studentMaps } from "../store";
+import { freshGroup, getMap, loadProgress, saveProgress, studentMaps } from "../store";
+import { mapProblems } from "../validate";
 
 /*
  * Start screen of the Peta app: first the list of maps, then the group (resume or new).
  * The chosen map goes into the URL (?map=…) so a reload or the 3D link keeps it.
  */
 export function initStart(begin: (m: MapDef, S: GroupState) => void): void {
+  const params = new URLSearchParams(location.search);
   const maps = studentMaps();
+  // "Coba sebagai siswa" from the portal: also allow a hidden map, as long as it is valid.
+  const preview = params.get("preview") === "1" ? getMap(params.get("map") ?? "") : undefined;
+  if (preview && !maps.some((m) => m.id === preview.id) && mapProblems(preview).length === 0) maps.push(preview);
   let chosen: MapDef | null = null, pickColor = COLORS[0];
 
   const sw = $("swatches");
@@ -41,7 +46,7 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void): void {
 
   function choose(m: MapDef) {
     chosen = m;
-    history.replaceState(null, "", `?map=${encodeURIComponent(m.id)}`);
+    history.replaceState(null, "", `?map=${encodeURIComponent(m.id)}${m === preview ? "&preview=1" : ""}`);
     $("pickMap").hidden = true; $("groupStep").hidden = false;
     $("chosenName").textContent = m.name;
     const saved = loadProgress(m);
@@ -65,7 +70,7 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void): void {
     begin(chosen, S);
   });
 
-  const wanted = new URLSearchParams(location.search).get("map");
+  const wanted = params.get("map");
   const pre = maps.find((m) => m.id === wanted);
   if (pre) choose(pre);
   if (!maps.length) list.innerHTML = `<p class="sub">Belum ada peta yang ditampilkan. Minta guru menampilkan peta di portal guru.</p>`;

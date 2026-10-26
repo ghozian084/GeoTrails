@@ -7,6 +7,7 @@ import { basicMap, copyOfBasic } from "../peta/src/basic";
 import { blankMap, blankPost, setTile, toPosts, walker, type MapDef } from "../peta/src/mapdef";
 import { align, allMaps, deleteMap, freshGroup, getMap, loadProgress, saveMap, saveProgress, studentMaps } from "../peta/src/store";
 import { mapProblems } from "../peta/src/validate";
+import { parseMap } from "../peta/src/portal/io";
 
 // Minimal localStorage for the store tests (Vitest runs in Node).
 const mem = new Map<string, string>();
@@ -130,5 +131,24 @@ describe("penyimpanan peta dan progres", () => {
     S.pos = [2, 2];
     setTile(m, 2, 2, "a");
     expect(align(S, m).pos).toEqual(m.start);
+  });
+});
+
+describe("impor peta", () => {
+  beforeEach(() => mem.clear());
+
+  it("berkas ekspor diimpor sebagai peta baru yang disembunyikan", () => {
+    const m = { ...tiny(), published: true };
+    saveMap(m);
+    const { map, problems } = parseMap(JSON.stringify(m));
+    expect(problems).toEqual([]);
+    expect(map!.id).not.toBe(m.id);
+    expect(map!.published).toBe(false);
+    expect(map!.name).toBe("Uji (impor)");
+  });
+
+  it("menolak berkas yang bukan peta", () => {
+    expect(parseMap("{}").problems[0]).toMatch(/bukan peta/);
+    expect(parseMap("bukan json").problems[0]).toMatch(/tidak bisa dibaca/);
   });
 });

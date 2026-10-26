@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     outDir: mode === "single" ? "dist-single" : "dist",
     // three.js alone is ~590 kB; it is only loaded by the Blox page.
     chunkSizeWarningLimit: 700,
-    rollupOptions: { input: (mode === "single" ? { main: "index.html" } : { main: "index.html", blox: "blox/index.html", peta: "peta/index.html" }) as Record<string, string> },
+    rollupOptions: { input: (mode === "single" ? { main: "index.html" } : { main: "index.html", blox: "blox/index.html", peta: "peta/index.html", petaGuru: "peta/guru.html" }) as Record<string, string> },
   },
   test: {
     include: ["tests/**/*.test.ts"],
