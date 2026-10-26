@@ -17,20 +17,18 @@ GeoTrails Peta (peta buatan guru): `/peta/` untuk siswa, `/peta/guru.html` untuk
 
 ## Kelas online (Firebase) untuk GeoTrails Peta
 
-Tanpa langkah di bawah ini, GeoTrails Peta tetap berjalan penuh secara lokal; tombol kelas online saja yang tidak muncul.
-Paket gratis Firebase (Spark) cukup: yang dipakai hanya Firestore dan Authentication, tanpa Cloud Storage.
+Sudah aktif. Konfigurasi web ada di `.env.production` (nilainya memang publik; aksesnya dijaga oleh aturan keamanan), jadi Vercel tidak perlu diisi apa pun.
 
-1. Buka https://console.firebase.google.com → **Add project**. Saat ditanya, **matikan Google Analytics**.
-2. **Firestore Database** → Create database → mode *production* → lokasi **asia-southeast2 (Jakarta)**.
-3. **Authentication** → Get started → Sign-in method → aktifkan **Google**.
-   Lalu Settings → **Authorized domains** → tambahkan domain GeoTrails (mis. `geotrails.alhazed.my.id` dan domain `*.vercel.app` bila dipakai).
-4. **Project settings** → Your apps → tambah aplikasi **Web** → salin nilai konfigurasinya.
-5. Di Vercel: Project → Settings → **Environment Variables**, isi semua variabel di `.env.example` (`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_APP_ID`), lalu deploy ulang.
-6. Pasang aturan keamanan (sekali, dan setiap kali `firebase/firestore.rules` berubah):
-   ```
-   npx firebase login
-   npx firebase deploy --only firestore:rules --project <PROJECT_ID>
-   ```
+- Proyek Firebase: **MrGhoziProject** (`gen-lang-client-0151740306`).
+- Database Firestore sendiri bernama **`geotrails`** di **asia-southeast2 (Jakarta)**, terpisah dari database aplikasi lain di proyek itu. Aturannya hanya dipasang ke database ini.
+- Login guru: Google. Domain yang diizinkan antara lain `geotrails.alhazed.my.id` dan `alhazed.my.id`.
+  Domain lain (mis. `*.vercel.app`): Firebase console → Authentication → Settings → **Authorized domains** → Add domain.
+- Pasang ulang aturan setiap kali `firebase/firestore.rules` berubah (setelah `npm run test:rules` lolos):
+  ```
+  npx firebase login
+  npx firebase deploy --only firestore:rules --project gen-lang-client-0151740306
+  ```
+- Tanpa `.env.production` (mis. salinan proyek ini untuk sekolah lain), GeoTrails Peta tetap berjalan penuh secara lokal; bagian kelas online saja yang tidak muncul. Isi variabel di `.env.example` untuk proyek Firebase sendiri.
 
 Pengembangan dan tes memakai emulator (butuh Java), tidak menyentuh proyek sungguhan:
 ```

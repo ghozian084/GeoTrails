@@ -13,6 +13,9 @@ export const firebaseConfig = {
   appId: env.VITE_FIREBASE_APP_ID as string | undefined,
 };
 
+/** Firestore database id: GeoTrails uses its own named database when the project hosts other apps. */
+export const databaseId = (env.VITE_FIREBASE_DATABASE_ID as string | undefined) || "(default)";
+
 /** Host of the local Firebase emulators (development and tests only). */
 export const emulatorHost = (env.VITE_FIREBASE_EMULATOR as string | undefined) || "";
 

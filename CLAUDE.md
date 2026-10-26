@@ -29,7 +29,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 - `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id, termasuk prototipe 3D di `dist/blox/`.
 - Prototipe 3D (Blox) memakai three.js dari npm (di-bundle, tanpa CDN). Ia memakai ulang data pos, penilaian, UI, Mode guru, dan progres tersimpan dari versi 2D; hanya lapisan game yang berbeda.
 - GeoTrails Peta (`peta/`) adalah aplikasi terpisah untuk peta buatan guru. Proyek awal (`/` dan `/blox/`) tidak boleh diubah untuk fitur Peta; Peta hanya mengimpor modul dari `src/` dan `blox/`, atau memakai salinan yang disesuaikan di `peta/src/`.
-- Firebase: aturan di `firebase/firestore.rules` (tanpa Cloud Storage; foto disimpan di Firestore). Konfigurasi web lewat variabel `VITE_FIREBASE_*` (lihat `.env.example`). Pengembangan dan tes memakai Firebase Emulator dengan proyek `demo-geotrails` (`.env.emulator`), tidak pernah proyek sungguhan.
+- Firebase: aturan di `firebase/firestore.rules` (tanpa Cloud Storage; foto disimpan di Firestore). Konfigurasi web lewat variabel `VITE_FIREBASE_*` (lihat `.env.example`); untuk produksi di `.env.production` (proyek `gen-lang-client-0151740306`, database Firestore bernama `geotrails` di asia-southeast2, terpisah dari database aplikasi lain di proyek itu). Pengembangan dan tes memakai Firebase Emulator dengan proyek `demo-geotrails` (`.env.emulator`), tidak pernah proyek sungguhan.
 - `npm run build:single` menghasilkan satu file HTML offline versi 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
 
 ## Struktur

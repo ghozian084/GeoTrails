@@ -7,7 +7,7 @@ import {
 import type { MapDef } from "../mapdef";
 import { getPhoto, photoKey, putPhoto } from "../store";
 import { newClassCode } from "./cache";
-import { emulatorHost, firebaseConfig } from "./config";
+import { databaseId, emulatorHost, firebaseConfig } from "./config";
 
 /*
  * Firebase access for GeoTrails Peta (stage 1: classes, published maps and their photos).
@@ -24,7 +24,7 @@ function init() {
   if (app) return;
   app = initializeApp(firebaseConfig as Record<string, string>);
   auth = getAuth(app);
-  db = getFirestore(app);
+  db = getFirestore(app, databaseId);
   if (emulatorHost) {
     connectAuthEmulator(auth, `http://${emulatorHost}:9099`, { disableWarnings: true });
     connectFirestoreEmulator(db, emulatorHost, 8080);
