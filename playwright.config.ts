@@ -19,14 +19,14 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /blox\.spec\.ts/,
+      testIgnore: /(blox|peta3d)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } },
     },
     {
       // The 3D page needs WebGL; software rendering lets it run without a GPU (containers, CI).
       // Kept separate because these flags slow down the 2D pages.
       name: "blox",
-      testMatch: /blox\.spec\.ts/,
+      testMatch: /(blox|peta3d)\.spec\.ts/,
       fullyParallel: false,
       use: {
         ...devices["Desktop Chrome"],

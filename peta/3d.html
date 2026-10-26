@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GeoTrails Peta 3D</title>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <div class="brand" aria-label="GeoTrails">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="var(--accent)"/><path d="M8 23 L15 9 L24 23 Z" fill="none" stroke="var(--accent-ink)" stroke-width="2.4" stroke-linejoin="round"/><path d="M15 23 V15 M15 23 L20 23" stroke="var(--tape)" stroke-width="2.4" stroke-linecap="round"/></svg>
+      Geo<span>Trails</span> <span class="blox-tag">3D</span>
+    </div>
+    <span class="map-tag" id="mapTag" hidden></span>
+    <div class="group" id="groupTag" hidden><i id="groupDot"></i><b id="groupName"></b></div>
+    <span class="demo-badge" id="demoBadge" hidden title="Semua pos terbuka (diatur di Mode guru)">MODE DEMO</span>
+    <div class="spacer"></div>
+    <div class="dots" id="dots" aria-label="Progres pos"></div>
+    <div class="score"><small>Poin</small><span id="score">0</span></div>
+    <a class="btn ghost" id="to2d" href="./" hidden title="Peta yang sama dalam 2D">2D</a>
+    <button class="btn ghost" id="mapsBtn" hidden>Ganti peta</button>
+    <button class="btn" id="openLog">Log</button>
+  </div>
+  <div class="stage" id="stage">
+    <canvas id="map" aria-label="Peta 3D. Gerakkan avatar dengan W A S D atau tombol panah, atau ketuk tujuan."></canvas>
+    <div class="help" id="help">Jalan: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> atau panah, lompat: <kbd>Spasi</kbd>. Putar kamera: seret, zoom: gulir. Buka pos: <kbd>E</kbd> atau ketuk tanda pos.<br>Mulai dari <b>Pos 0</b>.</div>
+    <div class="prompt" id="prompt" hidden>
+      <div class="t"><small id="promptSub"></small><b id="promptTitle"></b></div>
+      <button class="btn primary" id="promptBtn">Buka pos (E)</button>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+</div>
+
+<!-- Start -->
+<div class="overlay" id="startOv">
+  <div class="sheet start" role="dialog" aria-labelledby="startTitle">
+    <h1 id="startTitle">Geo<span>Trails</span></h1>
+    <p class="lede">Math Trail virtual di lingkungan sekolah. Latih strategi pemodelan di sini, lalu ukur objek yang sama saat trail di lapangan.</p>
+    <ol class="steps">
+      <li>Pilih peta, jelajahi denahnya, dan temukan semua pos.</li>
+      <li>Amati foto tiap pos. Pilih data yang kamu perlukan; tidak semua data dipakai.</li>
+      <li>Catat model dan perhitungan di lembar kerja kelompok.</li>
+    </ol>
+    <div id="pickMap">
+      <h2 class="pick-h">Pilih peta</h2>
+      <div class="map-list" id="mapList"></div>
+    </div>
+    <div id="groupStep" hidden>
+    <p class="chosen">Peta: <b id="chosenName"></b> <button type="button" class="btn ghost" id="changeMap">Ganti</button></p>
+    <div id="resumeBox" hidden>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn primary" id="resumeBtn"></button>
+        <button class="btn ghost" id="newBtn">Kelompok baru</button>
+      </div>
+    </div>
+    <form id="startForm">
+      <div class="field">
+        <label for="gname">Nama kelompok</label>
+        <input id="gname" maxlength="24" placeholder="contoh: Kelompok Pythagoras" autocomplete="off">
+      </div>
+      <div class="field">
+        <label id="clabel">Warna avatar</label>
+        <div class="swatches" id="swatches" role="group" aria-labelledby="clabel"></div>
+      </div>
+      <div class="row start-foot">
+        <button class="btn primary" type="submit" style="font-size:16px;padding:10px 18px">Mulai jelajah</button>
+      </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="postOv" hidden><div class="sheet post" id="post" role="dialog" aria-modal="true"></div></div>
+<div class="overlay" id="logOv" hidden><div class="sheet log" id="log" role="dialog" aria-modal="true"></div></div>
+<div class="overlay" id="finOv" hidden><div class="sheet finish" id="fin" role="dialog" aria-modal="true"></div></div>
+
+<script type="module" src="./3d.ts"></script>
+</body>
+</html>
