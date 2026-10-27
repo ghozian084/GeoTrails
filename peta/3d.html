@@ -19,6 +19,7 @@
     <div class="dots" id="dots" aria-label="Progres pos"></div>
     <div class="score"><small>Poin</small><span id="score">0</span></div>
     <a class="btn ghost" id="to2d" href="./" hidden title="Peta yang sama dalam 2D">2D</a>
+    <button class="btn ghost live-btn" id="liveBtn" hidden aria-expanded="false" aria-controls="livePanel" title="Kelompok lain di kelas yang sama"><i></i>Kelas <b id="liveCount">0</b></button>
     <button class="btn ghost" id="mapsBtn" hidden>Ganti peta</button>
     <button class="btn" id="openLog">Log</button>
   </div>
@@ -29,6 +30,7 @@
       <div class="t"><small id="promptSub"></small><b id="promptTitle"></b></div>
       <button class="btn primary" id="promptBtn">Buka pos (E)</button>
     </div>
+    <aside class="live-panel" id="livePanel" hidden aria-label="Papan skor kelas"></aside>
     <div class="toast" id="toast" hidden></div>
   </div>
 </div>

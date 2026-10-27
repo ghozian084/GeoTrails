@@ -11,6 +11,7 @@ export const firebaseConfig = {
   projectId: env.VITE_FIREBASE_PROJECT_ID as string | undefined,
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined,
   appId: env.VITE_FIREBASE_APP_ID as string | undefined,
+  databaseURL: env.VITE_FIREBASE_DATABASE_URL as string | undefined,
 };
 
 /** Firestore database id: GeoTrails uses its own named database when the project hosts other apps. */
@@ -22,3 +23,8 @@ export const emulatorHost = (env.VITE_FIREBASE_EMULATOR as string | undefined) |
 export const cloudEnabled = !!(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 
 export const loadCloud = () => import("./client");
+
+/** Realtime Database (multiplayer rooms) needs its own URL; without it the game stays single-player. */
+export const liveEnabled = cloudEnabled && !!firebaseConfig.databaseURL;
+
+export const loadLive = () => import("./live");

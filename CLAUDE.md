@@ -7,13 +7,13 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 ## Aturan tetap
 - Semua UI dan teks untuk siswa ditulis dalam Bahasa Indonesia. Kode dan komentar boleh berbahasa Inggris.
 - Proyek awal (`/` dan `/blox/`) tanpa login dan tanpa backend: semua datanya hanya tersimpan di browser laptop yang dipakai, tidak dikirim ke mana pun.
-- GeoTrails Peta boleh memakai **Firebase (Firestore + Authentication) khusus untuk fitur kelas**, dengan syarat:
+- GeoTrails Peta boleh memakai **Firebase (Firestore, Realtime Database, Authentication) khusus untuk fitur kelas**, dengan syarat:
   - Lokasi data `asia-southeast2` (Jakarta). Google Analytics dan pelacak lain tidak diaktifkan.
-  - Hanya guru yang login (akun Google). Siswa tidak login; mereka cukup memasukkan kode kelas.
-  - Tahap 1 (sekarang): yang tersimpan di Firebase hanya kelas, peta, dan foto buatan guru. Tidak ada data siswa yang dikirim.
-  - Bila kelak hasil kelompok dikirim: hanya nama kelompok, warna, status dan poin per pos, serta jumlah percobaan/petunjuk. Lembar kerja dan refleksi tetap lokal.
+  - Guru login dengan akun Google. Siswa tidak memasukkan data apa pun: mereka cukup memasukkan kode kelas, dan untuk mode bersama memakai login anonim Firebase (tanpa nama/email).
+  - Firestore (database `geotrails`, Jakarta): hanya kelas, peta, dan foto buatan guru.
+  - Mode bersama (multiplayer, Realtime Database, Singapura karena Jakarta belum tersedia): hanya untuk kelompok yang bergabung ke kelas. Yang dikirim hanya nama kelompok, warna, posisi dan arah avatar, poin, dan status per pos (hijau/oranye/belum). Lembar kerja, jawaban, dan refleksi tetap lokal. Siswa diberi tahu di layar mulai. Data sesi dihapus guru ("Hapus data sesi") atau otomatis bila tidak diperbarui 24 jam (dibersihkan saat ruang itu dibuka lagi).
   - Tanpa konfigurasi Firebase atau tanpa internet, Peta tetap berjalan penuh secara lokal.
-  - Setiap perubahan aturan keamanan (`firebase/firestore.rules`) harus lolos `npm run test:rules`.
+  - Setiap perubahan aturan keamanan (`firebase/firestore.rules`, `firebase/database.rules.json`) harus lolos `npm run test:rules`.
   - localStorage: progres kelompok (`geotrails.v1`), pengaturan guru (`geotrails.guru`), isi pos buatan guru (`geotrails.trail`).
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
   - GeoTrails Peta memakai kunci sendiri: `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
@@ -29,7 +29,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 - `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id, termasuk prototipe 3D di `dist/blox/`.
 - Prototipe 3D (Blox) memakai three.js dari npm (di-bundle, tanpa CDN). Ia memakai ulang data pos, penilaian, UI, Mode guru, dan progres tersimpan dari versi 2D; hanya lapisan game yang berbeda.
 - GeoTrails Peta (`peta/`) adalah aplikasi terpisah untuk peta buatan guru. Proyek awal (`/` dan `/blox/`) tidak boleh diubah untuk fitur Peta; Peta hanya mengimpor modul dari `src/` dan `blox/`, atau memakai salinan yang disesuaikan di `peta/src/`.
-- Firebase: aturan di `firebase/firestore.rules` (tanpa Cloud Storage; foto disimpan di Firestore). Konfigurasi web lewat variabel `VITE_FIREBASE_*` (lihat `.env.example`); untuk produksi di `.env.production` (proyek `gen-lang-client-0151740306`, database Firestore bernama `geotrails` di asia-southeast2, terpisah dari database aplikasi lain di proyek itu). Pengembangan dan tes memakai Firebase Emulator dengan proyek `demo-geotrails` (`.env.emulator`), tidak pernah proyek sungguhan.
+- Firebase: aturan di `firebase/firestore.rules` dan `firebase/database.rules.json` (tanpa Cloud Storage; foto disimpan di Firestore). Konfigurasi web lewat variabel `VITE_FIREBASE_*` (lihat `.env.example`); untuk produksi di `.env.production` (proyek `gen-lang-client-0151740306`, database Firestore bernama `geotrails` di asia-southeast2, terpisah dari database aplikasi lain di proyek itu). Mode bersama memakai Realtime Database `geotrails-live` (`VITE_FIREBASE_DATABASE_URL`); tanpa URL itu Peta tetap bermain sendiri. Pengembangan dan tes memakai Firebase Emulator dengan proyek `demo-geotrails` (`.env.emulator`), tidak pernah proyek sungguhan.
 - `npm run build:single` menghasilkan satu file HTML offline versi 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
 
 ## Struktur
@@ -54,7 +54,7 @@ e2e/                   Playwright (siswa, guru, touch, blox, peta, peta3d .spec.
 public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
 peta/                  GeoTrails Peta di /peta/: index.html (siswa: daftar peta lalu bermain 2D), 3d.html (peta yang sama dalam 3D),
                        guru.html (Portal Guru: daftar peta + editor grid). Kode di peta/src/ (mapdef, basic, validate, store,
-                       draw2d, game2d, world3d, game3d, ui/, portal/, cloud/ (config, cache, client Firebase))
+                       draw2d, game2d, world3d, game3d, ui/, portal/, cloud/ (config, cache, client Firebase, live + livedata untuk mode bersama), remote.ts (avatar kelompok lain))
 blox/                  prototipe 3D bergaya blok di /blox/ (index.html, main.ts, src/: game3d, world3d, avatar3d, movement, textures)
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ```
@@ -85,6 +85,7 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - Siswa hanya melihat peta yang ditampilkan guru dan lolos pemeriksaan (`peta/src/validate.ts`): ukuran 12–60 × 10–40, gedung tidak bertumpuk, titik mulai bisa dilalui, setiap pos bisa dicapai dari titik mulai, isi pos sesuai aturan yang sama dengan Mode guru.
 - Versi 3D (`peta/3d.html`) selalu dibangun dari data peta yang sama dengan 2D.
 - Kelas online: guru membuat kelas (kode 6 karakter) dan menerbitkan peta beserta fotonya; siswa memasukkan kode kelas untuk memuat peta itu. Peta kelas disimpan di laptop siswa agar tetap bisa dipakai offline. Model data: `classes/{kode}`, `classes/{kode}/maps/{idPeta}`, `.../photos/{uidPos}`.
+- Mode bersama (multiplayer realtime): kelompok di kelas yang sama dan peta yang sama saling melihat avatar (2D dan 3D) dan papan skor langsung (tombol "Kelas"). Guru memantau dari Portal Guru ("Pantau langsung": peta mini dengan posisi kelompok dan papan skor) dan bisa menghapus data sesi. Model data Realtime Database: `live/{kode}/owner` (uid guru), `live/{kode}/rooms/{idPeta}/{uid}` (satu kelompok, hanya ditulis kelompok itu sendiri).
 
 ## Uji wajib (tabel jawaban kunci)
 | Pos | Input | Hasil yang diharapkan |
@@ -109,6 +110,6 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - `npm test`: Vitest
 - `npm run typecheck`: pemeriksaan TypeScript (aplikasi dan e2e)
 - `npm run build` / `npm run build:single`
-- `npm run test:rules`: tes aturan keamanan Firestore (menjalankan emulator)
-- `npm run e2e:cloud`: tes kelas online Peta di emulator (guru menerbitkan, siswa memuat)
+- `npm run test:rules`: tes aturan keamanan Firestore dan Realtime Database (menjalankan emulator)
+- `npm run e2e:cloud`: tes kelas online Peta di emulator (guru menerbitkan, siswa memuat, mode bersama)
 - `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes 3D (Blox dan Peta 3D) berjalan di proyek `blox` dengan WebGL perangkat lunak.

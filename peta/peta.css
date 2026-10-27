@@ -25,3 +25,23 @@
 .class-join small{color:var(--muted);font-size:13px}
 .class-join small.bad{color:var(--bad)}
 .class-join .cls-code{font:700 14px var(--f-mono);letter-spacing:.1em;background:var(--tape);color:var(--tape-ink);padding:1px 8px;border-radius:5px}
+
+/* Multiplayer: class button and live scoreboard */
+.live-btn{display:inline-flex;align-items:center;gap:6px}
+.live-btn i{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.live-btn.on i{background:var(--good)}
+.live-note{display:block;margin-top:6px;color:var(--muted)}
+.live-panel{position:absolute;top:12px;right:12px;z-index:6;width:min(300px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.live-panel header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.live-panel header .btn{padding:2px 10px}
+.live-panel ol{list-style:none;margin:0 0 6px;padding:0;counter-reset:rank}
+.live-panel li{display:grid;grid-template-columns:20px 12px 1fr auto auto;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line);counter-increment:rank}
+.live-panel li::before{content:counter(rank);font-family:"JetBrains Mono",monospace;color:var(--muted);font-size:13px}
+.live-panel li i{width:12px;height:12px;border-radius:50%}
+.live-panel li .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.live-panel li .pp{color:var(--muted);font-family:"JetBrains Mono",monospace;font-size:13px}
+.live-panel li b{font-family:"JetBrains Mono",monospace}
+.live-panel li.me .nm{font-weight:700}
+.live-panel li.off{opacity:.55}
+.live-panel small{color:var(--muted)}
