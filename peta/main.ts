@@ -17,6 +17,7 @@ import { app, demo, persist } from "./src/session";
 import { showPrompt, updateHud } from "./src/ui/hud";
 import { openLog } from "./src/ui/log";
 import { closeAll, closePost, openPost, setGame } from "./src/ui/post";
+import { others, startLive } from "./src/ui/live";
 import { initStart } from "./src/ui/start";
 
 /* GeoTrails Peta: pick a map (Basic or a teacher-made one), then play it in 2D. */
@@ -31,7 +32,7 @@ const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv")
 function begin(map: MapDef, S: GroupState): void {
   app.map = map; app.posts = toPosts(map); app.S = S;
   const game = createMapGame($<HTMLCanvasElement>("map"), $("stage"), map, {
-    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo,
+    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo, others,
   });
   setGame(game);
   const openNearby = () => { const p = game.nearPost(); if (p) openPost(p.id); else toast("Dekati salah satu pos dulu."); };
@@ -52,6 +53,7 @@ function begin(map: MapDef, S: GroupState): void {
   persist();
   game.begin(S.pos);
   void loadPhotos(map);
+  startLive(map, game);
 }
 
 initStart(begin);

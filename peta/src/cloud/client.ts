@@ -31,6 +31,12 @@ function init() {
   }
 }
 
+/** Shared app and auth for the other Firebase modules (live rooms). */
+export function firebase(): { app: FirebaseApp; auth: Auth } {
+  init();
+  return { app, auth };
+}
+
 export interface Teacher { uid: string; name: string }
 export interface CloudClass { code: string; name: string; ownerUid: string }
 export interface PublishedMap { id: string; name: string; json: string; photos: string[] }

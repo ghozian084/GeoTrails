@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { BlockAvatar } from "../../blox/src/avatar3d";
 import { angleDelta, inputDir, tileOf } from "../../blox/src/movement";
 import { bfs, type Pt } from "../../src/game/bfs";
-import type { Game, GameHooks } from "../../src/game/game";
+import { smoother, type MapGame, type MapGameHooks } from "./remote";
 import { gateDone } from "../../src/logic/score";
 import { toPosts, walker, type MapDef } from "./mapdef";
 import { freeOn, slideOn } from "./move3d";
@@ -20,7 +20,7 @@ const KEYS: Record<string, [number, number]> = {
   a: [0, -1], arrowleft: [0, -1], d: [0, 1], arrowright: [0, 1],
 };
 
-export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, map: MapDef, hooks: GameHooks): Game {
+export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, map: MapDef, hooks: MapGameHooks): MapGame {
   const posts = toPosts(map), walk = walker(map);
   const free = (x: number, z: number) => freeOn(walk, x, z);
   const slide = (x: number, z: number, dx: number, dz: number) => slideOn(walk, x, z, dx, dz);
@@ -87,6 +87,7 @@ export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, m
   let stick: [number, number] = [0, 0];
   let path: Pt[] = [], pendingOpen: number | null = null;
   let lastTile = "", lastPrompt = -1, t0 = performance.now();
+  const smooth = smoother(SPEED + 1), remotes = new Map<string, { key: string; avatar: BlockAvatar }>();
 
   const nearPost = () => posts.find((p) => Math.max(Math.abs(p.tile[0] - Math.floor(x)), Math.abs(p.tile[1] - Math.floor(z))) <= 1);
 
@@ -136,6 +137,22 @@ export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, m
       avatar.root.rotation.y = facing;
       avatar.update(dt, speed, y > 0.01);
     }
+
+    // Other groups in the live room (multiplayer).
+    const seen = new Set<string>();
+    for (const o of smooth(hooks.others?.() ?? [], dt)) {
+      seen.add(o.uid);
+      let r = remotes.get(o.uid);
+      if (!r || r.key !== o.color + o.name) {
+        if (r) scene.remove(r.avatar.root);
+        r = { key: o.color + o.name, avatar: new BlockAvatar(o.color, o.name) };
+        remotes.set(o.uid, r); scene.add(r.avatar.root);
+      }
+      r.avatar.root.position.set(o.rx * U, 0, o.ry * U);
+      r.avatar.root.rotation.y = o.d;
+      r.avatar.update(dt, o.moving ? SPEED : 0, false);
+    }
+    for (const [uid, r] of remotes) if (!seen.has(uid)) { scene.remove(r.avatar.root); remotes.delete(uid); }
 
     // Post markers reflect progress and the Pos 0 gate.
     const unlocked = hooks.allOpen() || (!!S && gateDone(S.posts));
@@ -238,6 +255,7 @@ export function createMapGame3D(canvas: HTMLCanvasElement, stage: HTMLElement, m
   requestAnimationFrame(frame);
 
   return {
+    pose: () => ({ x, y: z, d: facing }),
     begin(pos) {
       x = pos[0] + .5; z = pos[1] + .5;
       if (!free(x, z)) { x = map.start[0] + .5; z = map.start[1] + .5; }

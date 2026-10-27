@@ -2,7 +2,8 @@ import { facing, blinking, walkPose } from "../../src/game/anim";
 import { bfs, type Pt } from "../../src/game/bfs";
 import type { Cam } from "../../src/game/camera";
 import { readColors, C, type Avatar } from "../../src/game/render";
-import type { Game, GameHooks } from "../../src/game/game";
+import { angleOf, dirOf } from "./cloud/livedata";
+import { smoother, type MapGame, type MapGameHooks } from "./remote";
 import { SPRITE_H, SPRITE_W, spriteFrame } from "../../src/game/sprite";
 import { gateDone } from "../../src/logic/score";
 import { dominantDir } from "../../src/ui/stick";
@@ -27,7 +28,7 @@ export function follow(m: MapDef, cam: Cam, px: number, py: number, T: number, W
   cam.y = mh < H ? (mh - H) / 2 : Math.max(0, Math.min(mh - H, py * T + T / 2 - H / 2));
 }
 
-export function createMapGame(canvas: HTMLCanvasElement, stage: HTMLElement, map: MapDef, hooks: GameHooks): Game {
+export function createMapGame(canvas: HTMLCanvasElement, stage: HTMLElement, map: MapDef, hooks: MapGameHooks): MapGame {
   const ctx = canvas.getContext("2d")!;
   canvas.tabIndex = 0;
   const posts = toPosts(map), walk = walker(map);
@@ -53,6 +54,7 @@ export function createMapGame(canvas: HTMLCanvasElement, stage: HTMLElement, map
 
   const nearPost = () => posts.find((p) => Math.max(Math.abs(p.tile[0] - av.x), Math.abs(p.tile[1] - av.y)) <= 1);
   let lastPrompt = -1;
+  const smooth = smoother(7);
 
   function step(dt: number, now: number) {
     const S = hooks.getState();
@@ -105,6 +107,24 @@ export function createMapGame(canvas: HTMLCanvasElement, stage: HTMLElement, map
         ctx.imageSmoothingEnabled = smooth;
       },
     });
+    // Other groups in the live room (multiplayer), with their name above the head.
+    for (const o of smooth(hooks.others?.() ?? [], dt)) {
+      const ox = o.rx * T, oFeet = o.ry * T + T * .42;
+      layers.push({
+        depth: o.ry + 1e-3,
+        draw: () => {
+          ctx.fillStyle = C["map-shadow"]; ctx.beginPath(); ctx.ellipse(ox, oFeet - T * .04, T * .3, T * .1, 0, 0, 7); ctx.fill();
+          const smooth = ctx.imageSmoothingEnabled;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(spriteFrame(o.color, dirOf(o.d), walkPose(o.dist, o.moving), false), ox - sw / 2, oFeet - sh, sw, sh);
+          ctx.imageSmoothingEnabled = smooth;
+          ctx.font = `700 ${Math.max(10, T * .26)}px "Atkinson Hyperlegible",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          const tw = ctx.measureText(o.name).width + 10, ty = oFeet - sh - T * .22;
+          ctx.globalAlpha = .85; ctx.fillStyle = C.surface; ctx.beginPath(); ctx.roundRect(ox - tw / 2, ty - T * .17, tw, T * .34, 5); ctx.fill(); ctx.globalAlpha = 1;
+          ctx.fillStyle = C.ink; ctx.fillText(o.name, ox, ty);
+        },
+      });
+    }
     layers.sort((a, b) => a.depth - b.depth).forEach((l) => l.draw(ctx, now));
 
     // Post markers: the first post is the gate; the others open once it is done.
@@ -161,6 +181,7 @@ export function createMapGame(canvas: HTMLCanvasElement, stage: HTMLElement, map
   requestAnimationFrame(frame);
 
   return {
+    pose: () => ({ x: av.px + .5, y: av.py + .5, d: angleOf(av.dir) }),
     begin(pos) {
       const [x, y] = walk(pos[0], pos[1]) ? pos : map.start;
       av.x = x; av.y = y; av.px = x; av.py = y; av.dir = "down"; path = []; canvas.focus();

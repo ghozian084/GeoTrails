@@ -4,7 +4,7 @@ import type { GroupState } from "../../../src/types";
 import type { MapDef } from "../mapdef";
 import { minimap } from "../minimap";
 import { cachedClass, cacheClass, classMaps, isClassCode, joinedClass, normalizeCode, setJoinedClass } from "../cloud/cache";
-import { cloudEnabled, loadCloud } from "../cloud/config";
+import { cloudEnabled, liveEnabled, loadCloud } from "../cloud/config";
 import { freshGroup, getMap, loadProgress, saveProgress, studentMaps } from "../store";
 import { mapProblems } from "../validate";
 
@@ -111,7 +111,7 @@ function initClassBox(onChange: () => void): void {
   function render() {
     const code = joinedClass(), c = code ? cachedClass(code) : null;
     box!.innerHTML = code
-      ? `<div class="row"><span>Kelas <b>${esc(c?.name ?? code)}</b> <span class="cls-code">${code}</span></span><button type="button" class="btn ghost" id="classRefresh">Perbarui</button><button type="button" class="btn ghost" id="classLeave">Keluar kelas</button></div><small id="classStatus" aria-live="polite"></small>`
+      ? `<div class="row"><span>Kelas <b>${esc(c?.name ?? code)}</b> <span class="cls-code">${code}</span></span><button type="button" class="btn ghost" id="classRefresh">Perbarui</button><button type="button" class="btn ghost" id="classLeave">Keluar kelas</button></div><small id="classStatus" aria-live="polite"></small>${liveEnabled ? `<small class="live-note">Main bersama kelas: nama kelompok, warna, posisi, dan poin kelompokmu terlihat oleh teman sekelas dan guru.</small>` : ""}`
       : `<form class="row" id="classForm"><label for="classCode">Kode kelas</label><input id="classCode" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="mis. KQ7M2P"><button class="btn" type="submit">Gabung</button></form><small id="classStatus" aria-live="polite">Punya kode dari guru? Masukkan untuk memuat peta kelas.</small>`;
     document.getElementById("classForm")?.addEventListener("submit", (e) => {
       e.preventDefault();

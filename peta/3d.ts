@@ -18,6 +18,7 @@ import { app, demo, persist } from "./src/session";
 import { showPrompt, updateHud } from "./src/ui/hud";
 import { openLog } from "./src/ui/log";
 import { closeAll, closePost, openPost, setGame } from "./src/ui/post";
+import { others, startLive } from "./src/ui/live";
 import { initStart } from "./src/ui/start";
 
 /* GeoTrails Peta 3D: the same maps, progress and posts as the 2D page, in blocky 3D. */
@@ -44,7 +45,7 @@ function begin(map: MapDef, S: GroupState): void {
 function start(map: MapDef, S: GroupState): void {
   app.map = map; app.posts = toPosts(map); app.S = S;
   const game = createMapGame3D($<HTMLCanvasElement>("map"), $("stage"), map, {
-    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo,
+    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo, others,
   });
   setGame(game);
   const openNearby = () => { const p = game.nearPost(); if (p) openPost(p.id); else toast("Dekati salah satu pos dulu."); };
@@ -66,6 +67,7 @@ function start(map: MapDef, S: GroupState): void {
   persist();
   game.begin(S.pos);
   void loadPhotos(map);
+  startLive(map, game);
 }
 
 window.addEventListener("error", (e) => { if (!$("startOv").hidden) fail3d(app.map ?? null, e.error ?? e.message); });

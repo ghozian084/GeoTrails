@@ -1,6 +1,7 @@
 import { $, esc, toast } from "../../../src/ui/dom";
 import type { CloudClass, PublishedMap, Teacher } from "../cloud/client";
-import { cloudEnabled, emulatorHost, loadCloud } from "../cloud/config";
+import { cloudEnabled, emulatorHost, liveEnabled, loadCloud, loadLive } from "../cloud/config";
+import { monitoring, mountMonitor, startMonitor, stopMonitor } from "./monitor";
 import { customMaps, saveMap } from "../store";
 import { mapProblems } from "../validate";
 import type { MapDef } from "../mapdef";
@@ -42,7 +43,7 @@ export function classSection(el: HTMLElement, rerender: () => void, mapsChanged:
     if (emulatorHost) Object.assign(window, { geotrailsTestSignIn: async (sub: string, name: string) => (await loadCloud()).signInForTests(sub, name) });
     void loadCloud().then((c) => c.watchTeacher(async (t) => {
       teacher = t;
-      if (t) await refresh(); else { classes = []; published.clear(); }
+      if (t) await refresh(); else { classes = []; published.clear(); stopMonitor(); }
       redraw();
     }));
   }
@@ -55,7 +56,7 @@ export function classSection(el: HTMLElement, rerender: () => void, mapsChanged:
       <div class="cls-list">${classes.map((c) => {
         const pubs = published.get(c.code) ?? [];
         return `<article class="cls" data-code="${c.code}">
-          <header><b>${esc(c.name)}</b><span class="cls-code" title="Kode kelas">${c.code}</span><button class="btn ghost" data-act="copycode">Salin kode</button></header>
+          <header><b>${esc(c.name)}</b><span class="cls-code" title="Kode kelas">${c.code}</span><button class="btn ghost" data-act="copycode">Salin kode</button>${liveEnabled ? `<button class="btn" data-act="monitor">Pantau langsung</button>` : ""}</header>
           ${pubs.length ? `<ul>${pubs.map((pm) => {
             const local = customMaps().find((m) => m.id === pm.id);
             const state = !local ? `<button class="btn ghost" data-act="pull" data-map="${esc(pm.id)}">Salin ke laptop ini</button>`
@@ -65,6 +66,7 @@ export function classSection(el: HTMLElement, rerender: () => void, mapsChanged:
           }).join("")}</ul>` : `<small>Belum ada peta yang diterbitkan.</small>`}
           ${maps.length ? `<div class="row"><select data-sel aria-label="Peta untuk diterbitkan">${maps.map((m) => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select><button class="btn primary" data-act="publish">Terbitkan ke kelas ini</button></div>`
             : `<small>Buat peta (tanpa masalah) dulu untuk diterbitkan.</small>`}
+          <div class="cls-live" data-live></div>
         </article>`;
       }).join("")}</div>
       <form class="row" id="clsNew"><input id="clsName" maxlength="60" placeholder="Nama kelas, mis. 9A Matematika" aria-label="Nama kelas baru"><button class="btn" type="submit">Buat kelas</button></form>`}`;
@@ -85,13 +87,23 @@ export function classSection(el: HTMLElement, rerender: () => void, mapsChanged:
     e.preventDefault();
     const name = $<HTMLInputElement>("clsName").value.trim();
     if (!name) { toast("Tulis nama kelas dulu."); return; }
-    void run("Membuat kelas…", async () => { await (await cloud()).createClass(teacher!.uid, name); });
+    void run("Membuat kelas…", async () => {
+      const c = await (await cloud()).createClass(teacher!.uid, name);
+      // Own the class's live rooms right away (first owner wins).
+      if (liveEnabled) await (await loadLive()).claimClass(c.code, teacher!.uid).catch(() => undefined);
+    });
   });
+  mountMonitor();
   el.querySelector(".cls-list")?.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-act]");
     if (!b) return;
     const card = b.closest<HTMLElement>(".cls")!, code = card.dataset.code!;
     const act = b.dataset.act;
+    if (act === "monitor") {
+      if (monitoring() === code) return;
+      void startMonitor(code, teacher!.uid, published.get(code) ?? []).then(mountMonitor, () => toast("Pantauan langsung tidak tersambung."));
+      return;
+    }
     if (act === "copycode") { void navigator.clipboard?.writeText(code).then(() => toast(`Kode ${code} tersalin.`), () => toast(code)); return; }
     const mapId = b.dataset.map ?? card.querySelector<HTMLSelectElement>("[data-sel]")?.value;
     if (!mapId) return;
