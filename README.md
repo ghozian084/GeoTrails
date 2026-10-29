@@ -30,6 +30,7 @@ Sudah aktif. Konfigurasi web ada di `.env.production` (nilainya memang publik; a
   ```
 - **Mode bersama (multiplayer realtime)** memakai Realtime Database **`geotrails-live`** (asia-southeast1, Singapura; Jakarta belum tersedia untuk layanan ini) dan login anonim untuk siswa. Kelompok yang bergabung ke kelas saling melihat avatar di peta yang sama (2D dan 3D) dan papan skor langsung (tombol **Kelas**). Guru: Portal Guru → kelas → **Pantau langsung**.
   Yang dikirim hanya nama kelompok, warna, posisi, poin, dan status per pos. Data sesi dihapus dengan **Hapus data sesi**, atau otomatis bila tidak aktif 24 jam (dibersihkan saat ruang itu dibuka lagi).
+  Login anonim siswa sudah aktif di proyek ini. Aturan Firestore menolak akun anonim untuk membuat kelas atau menerbitkan peta.
   Pasang ulang aturannya setiap kali `firebase/database.rules.json` berubah: `npx firebase deploy --only database --project gen-lang-client-0151740306`, atau tempel isinya di Firebase console → Realtime Database → `geotrails-live` → Rules → Publish.
 - Tanpa `.env.production` (mis. salinan proyek ini untuk sekolah lain), GeoTrails Peta tetap berjalan penuh secara lokal; bagian kelas online saja yang tidak muncul. Isi variabel di `.env.example` untuk proyek Firebase sendiri.
 

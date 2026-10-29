@@ -49,6 +49,14 @@ describe("kelas", () => {
     await assertFails(env.unauthenticatedContext().firestore().doc("classes/SSS444").set(cls("x")));
   });
 
+  it("siswa dengan login anonim (mode bersama) tidak bisa membuat kelas atau menerbitkan peta", async () => {
+    const anon = env.authenticatedContext("siswa-1", { firebase: { sign_in_provider: "anonymous" } }).firestore();
+    await assertFails(anon.doc("classes/TTT555").set(cls("siswa-1")));
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc("classes/UUU666").set(cls("siswa-1")); });
+    await assertFails(anon.doc("classes/UUU666/maps/m-9").set(mapDoc()));
+    await assertSucceeds(anon.doc("classes/ABC234/maps/m-1").get());
+  });
+
   it("kelas guru lain tidak bisa diambil alih, diubah, atau dihapus", async () => {
     const b = env.authenticatedContext("guru-b").firestore();
     await assertFails(b.doc("classes/ABC234").set(cls("guru-b")));
