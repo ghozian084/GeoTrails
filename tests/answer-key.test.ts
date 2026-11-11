@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { POSTS } from "../src/data/posts";
-import { grade } from "../src/logic/grade";
-import { parseNumber } from "../src/logic/parseNumber";
-import type { Zone } from "../src/types";
+import { grade } from "../src/core/grade";
+import { parseNumber } from "../src/core/parseNumber";
+import type { Zone } from "../src/core/types";
 
 /* Tabel uji wajib dari CLAUDE.md. */
 const CASES: { pos: number; input: string; zone: Zone; message?: RegExp }[] = [

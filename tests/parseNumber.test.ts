@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseNumber } from "../src/logic/parseNumber";
+import { parseNumber } from "../src/core/parseNumber";
 
 describe("parseNumber (gaya Indonesia)", () => {
   it.each([

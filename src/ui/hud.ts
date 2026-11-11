@@ -1,12 +1,14 @@
-import { isGateDone, posts, S, session, total } from "../state";
-import type { Post } from "../types";
+import type { Post } from "../core/types";
 import { $, esc } from "./dom";
+import { app, isGateDone, S, total } from "../map/session";
+
+/* HUD for the Peta app (adapted from src/ui/hud.ts). */
 
 export function updateHud(): void {
-  if (!session.S) return;
+  if (!app.S) return;
   $("score").textContent = String(total());
   $("dots").innerHTML = S().posts
-    .map((p, i) => `<span class="${p.result || (i === 0 || isGateDone() ? "open" : "")}" title="Pos ${i}: ${esc(posts[i].title)}">${i}</span>`)
+    .map((p, i) => `<span class="${p.result || (i === 0 || isGateDone() ? "open" : "")}" title="Pos ${i}: ${esc(app.posts[i].title)}">${i}</span>`)
     .join("");
 }
 

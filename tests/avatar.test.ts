@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { blinking, facing, walkPose, type Dir, type Pose } from "../src/game/anim";
-import { avatarPalette, avatarPixels, SPRITE_H, SPRITE_W } from "../src/game/sprite";
+import { blinking, facing, walkPose, type Dir, type Pose } from "../src/render2d/anim";
+import { avatarPalette, avatarPixels, SPRITE_H, SPRITE_W } from "../src/render2d/sprite";
 
 describe("animasi avatar", () => {
   it("arah hadap mengikuti gerak, dan tetap saat diam", () => {

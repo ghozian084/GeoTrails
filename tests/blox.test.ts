@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { START } from "../src/data/map";
-import { angleDelta, free, inputDir, RADIUS, slide, tileOf } from "../blox/src/movement";
+import { angleDelta, free, inputDir, RADIUS, slide, tileOf } from "../src/render3d/movement";
 
 describe("Blox: gerak 3D di grid denah", () => {
   const [sx, sy] = START;

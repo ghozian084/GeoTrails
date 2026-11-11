@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { COLS, ROWS, walk } from "../src/data/map";
 import { POSTS } from "../src/data/posts";
-import { grade } from "../src/logic/grade";
-import { parseNumber } from "../src/logic/parseNumber";
-import { basicMap, copyOfBasic } from "../peta/src/basic";
-import { blankMap, blankPost, setTile, toPosts, walker, type MapDef } from "../peta/src/mapdef";
-import { align, allMaps, deleteMap, freshGroup, getMap, loadProgress, saveMap, saveProgress, studentMaps } from "../peta/src/store";
-import { mapProblems } from "../peta/src/validate";
-import { parseMap } from "../peta/src/portal/io";
-import { cacheClass, cachedClass, classMaps, isClassCode, joinedClass, newClassCode, normalizeCode, setJoinedClass } from "../peta/src/cloud/cache";
+import { grade } from "../src/core/grade";
+import { parseNumber } from "../src/core/parseNumber";
+import { basicMap, copyOfBasic } from "../src/map/basic";
+import { blankMap, blankPost, setTile, toPosts, walker, type MapDef } from "../src/map/mapdef";
+import { align, allMaps, deleteMap, freshGroup, getMap, loadProgress, saveMap, saveProgress, studentMaps } from "../src/map/store";
+import { mapProblems } from "../src/map/validate";
+import { parseMap } from "../src/portal/io";
+import { cacheClass, cachedClass, classMaps, isClassCode, joinedClass, newClassCode, normalizeCode, setJoinedClass } from "../src/cloud/cache";
 
 // Minimal localStorage for the store tests (Vitest runs in Node).
 const mem = new Map<string, string>();

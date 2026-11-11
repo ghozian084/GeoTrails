@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { closeness, percentDiff } from "../src/logic/compare";
+import { closeness, percentDiff } from "../src/core/compare";
 
 describe("taksiran vs fisik", () => {
   it("selisih persen bertanda, relatif terhadap hasil fisik", () => {

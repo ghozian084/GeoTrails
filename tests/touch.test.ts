@@ -30,7 +30,7 @@ describe("joystick layar sentuh", () => {
 });
 
 import { COLS, ROWS } from "../src/data/map";
-import { tileSize } from "../src/game/camera";
+import { tileSize } from "../src/render2d/camera";
 
 describe("ukuran petak peta", () => {
   it("desktop tetap 46 px", () => {

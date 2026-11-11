@@ -13,7 +13,7 @@ export default defineConfig({
   use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${PORT}`, viewport: { width: 1280, height: 860 }, trace: "retain-on-failure" },
   webServer: {
     command: `npx vite build --mode emulator --outDir dist-emulator && npx vite preview --outDir dist-emulator --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}/peta/`,
+    url: `http://localhost:${PORT}/`,
     reuseExistingServer: false,
     timeout: 120_000,
   },

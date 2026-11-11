@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { POSTS } from "../src/data/posts";
-import { fresh, normalize } from "../src/store";
-import type { GroupState } from "../src/types";
+import { fresh, normalize } from "../src/core/store";
+import type { GroupState } from "../src/core/types";
 
 describe("penyimpanan", () => {
   it("kelompok baru punya lembar kerja kosong, fisik kosong, dan refleksi kosong", () => {

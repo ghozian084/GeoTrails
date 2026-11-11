@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { angleOf, deduped, dirOf, doneCount, parseRoom, postString, ranked, round2, type LivePlayer } from "../peta/src/cloud/livedata";
-import { smoother } from "../peta/src/remote";
-import type { GroupState } from "../src/types";
+import { angleOf, deduped, dirOf, doneCount, parseRoom, postString, ranked, round2, type LivePlayer } from "../src/cloud/livedata";
+import { smoother } from "../src/map/remote";
+import type { GroupState } from "../src/core/types";
 
 /* Multiplayer (live rooms): data helpers and avatar smoothing. */
 

@@ -1,4 +1,4 @@
-import type { Post, Trail } from "../types";
+import type { Post, Trail } from "../core/types";
 
 /*
  * KUNCI JAWABAN. Jangan mengubah angka di file ini tanpa izin eksplisit.

@@ -1,0 +1,14 @@
+{
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/peta", "destination": "/" },
+    { "source": "/peta/", "destination": "/" },
+    { "source": "/peta/index.html", "destination": "/" },
+    { "source": "/peta/3d.html", "destination": "/3d" },
+    { "source": "/peta/guru.html", "destination": "/guru" },
+    { "source": "/blox", "destination": "/klasik/3d" },
+    { "source": "/blox/", "destination": "/klasik/3d" },
+    { "source": "/blox/index.html", "destination": "/klasik/3d" },
+    { "source": "/klasik", "destination": "/klasik/" }
+  ]
+}
