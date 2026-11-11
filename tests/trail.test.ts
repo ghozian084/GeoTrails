@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { POSTS } from "../src/data/posts";
-import { toTrailFile, validateTrail } from "../src/logic/trail";
+import { toTrailFile, validateTrail } from "../src/core/trail";
 
 const file = () => JSON.parse(JSON.stringify(toTrailFile(POSTS)));
 

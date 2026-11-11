@@ -6,8 +6,8 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 
 ## Aturan tetap
 - Semua UI dan teks untuk siswa ditulis dalam Bahasa Indonesia. Kode dan komentar boleh berbahasa Inggris.
-- Proyek awal (`/` dan `/blox/`) tanpa login dan tanpa backend: semua datanya hanya tersimpan di browser laptop yang dipakai, tidak dikirim ke mana pun.
-- GeoTrails Peta boleh memakai **Firebase (Firestore, Realtime Database, Authentication) khusus untuk fitur kelas**, dengan syarat:
+- Halaman siswa ada di domain utama: `/` (RPG 2D) dan `/3d` (Blox 3D); siswa memilih tampilan di layar mulai, setelah memilih peta. Portal Guru di `/guru`. Versi klasik (denah asli dengan Mode guru lama) ada di `/klasik/` dan `/klasik/3d`, tanpa login dan tanpa backend: datanya hanya tersimpan di browser. Alamat lama (`/peta/...`, `/blox/`) dialihkan di `vercel.json`.
+- Halaman utama (siswa dan Portal Guru) boleh memakai **Firebase (Firestore, Realtime Database, Authentication) khusus untuk fitur kelas**, dengan syarat:
   - Lokasi data `asia-southeast2` (Jakarta). Google Analytics dan pelacak lain tidak diaktifkan.
   - Guru login dengan akun Google. Siswa tidak memasukkan data apa pun: mereka cukup memasukkan kode kelas, dan untuk mode bersama memakai login anonim Firebase (tanpa nama/email).
   - Firestore (database `geotrails`, Jakarta): hanya kelas, peta, dan foto buatan guru.
@@ -16,46 +16,46 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
   - Setiap perubahan aturan keamanan (`firebase/firestore.rules`, `firebase/database.rules.json`) harus lolos `npm run test:rules`.
   - localStorage: progres kelompok (`geotrails.v1`), pengaturan guru (`geotrails.guru`), isi pos buatan guru (`geotrails.trail`).
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
-  - GeoTrails Peta memakai kunci sendiri: `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
+  - Halaman utama memakai kunci sendiri (namanya tetap `peta` agar progres lama tetap terbaca): `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
 - Tidak boleh mengumpulkan data pribadi (UU PDP). Identitas kelompok hanya nama kelompok dan warna avatar. Selain itu yang disimpan hanya isi pelajaran: jawaban, lembar kerja, hasil ukur fisik, refleksi, foto objek, dan isi pos. Setiap kotak teks bebas untuk siswa wajib memuat pengingat "Jangan menulis data pribadi." Tidak ada analytics atau pelacak.
 - Aplikasi harus tetap berjalan offline setelah dibuka sekali. Jangan memakai CDN saat runtime. Font dan aset di-bundle. SDK Firebase di-bundle dari npm dan hanya dimuat saat fitur kelas dipakai. Satu-satunya pengecualian: popup login Google guru di Portal Guru memuat skrip dari Google.
 - **Jangan mengubah angka kunci jawaban di `src/data/posts.ts`** tanpa izin eksplisit. Setiap perubahan pada data pos harus lolos `npm test`. Isi pos yang diubah guru lewat Mode guru disimpan terpisah di localStorage dan tidak menyentuh `posts.ts`.
-- Progres yang tersimpan dari versi lama harus tetap bisa dilanjutkan. Bila menambah kolom pada state, isi nilai bawaannya di `normalize()` (`src/store.ts`).
+- Progres yang tersimpan dari versi lama harus tetap bisa dilanjutkan. Bila menambah kolom pada state, isi nilai bawaannya di `normalize()` (`src/core/store.ts`).
 - Kerjakan perubahan kecil dan bertahap. Satu fitur, lalu uji, lalu commit.
 
 ## Stack
 - Vite + TypeScript, tanpa framework. Peta digambar di `<canvas>`, sedangkan UI memakai DOM biasa.
 - Vitest untuk logika: parsing angka, penilaian, skor, kalkulator, CSV, rekap, validasi isi pos, sprite. Playwright untuk alur end-to-end siswa dan guru (`e2e/`), dijalankan terhadap build produksi lewat `vite preview`. Tes e2e juga memastikan tidak ada permintaan ke internet saat aplikasi dipakai.
-- `npm run build` menghasilkan `dist/` untuk deploy ke subdomain alhazed.my.id, termasuk prototipe 3D di `dist/blox/`.
-- Prototipe 3D (Blox) memakai three.js dari npm (di-bundle, tanpa CDN). Ia memakai ulang data pos, penilaian, UI, Mode guru, dan progres tersimpan dari versi 2D; hanya lapisan game yang berbeda.
-- GeoTrails Peta (`peta/`) adalah aplikasi terpisah untuk peta buatan guru. Proyek awal (`/` dan `/blox/`) tidak boleh diubah untuk fitur Peta; Peta hanya mengimpor modul dari `src/` dan `blox/`, atau memakai salinan yang disesuaikan di `peta/src/`.
+- `npm run build` menghasilkan `dist/` untuk deploy (Vercel, subdomain alhazed.my.id): `index.html`, `3d.html`, `guru.html`, `klasik/`. `vercel.json` menyalakan alamat tanpa `.html` dan pengalihan alamat lama.
+- Tampilan 3D memakai three.js dari npm (di-bundle, tanpa CDN), dibangun dari data peta yang sama dengan 2D.
+- Semua kode ada di `src/`, dikelompokkan menurut fungsi (lihat Struktur). Kode yang hanya dipakai versi klasik ada di `src/klasik/`; fitur baru masuk ke halaman utama, bukan ke versi klasik.
 - Firebase: aturan di `firebase/firestore.rules` dan `firebase/database.rules.json` (tanpa Cloud Storage; foto disimpan di Firestore). Konfigurasi web lewat variabel `VITE_FIREBASE_*` (lihat `.env.example`); untuk produksi di `.env.production` (proyek `gen-lang-client-0151740306`, database Firestore bernama `geotrails` di asia-southeast2, terpisah dari database aplikasi lain di proyek itu). Mode bersama memakai Realtime Database `geotrails-live` (`VITE_FIREBASE_DATABASE_URL`); tanpa URL itu Peta tetap bermain sendiri. Pengembangan dan tes memakai Firebase Emulator dengan proyek `demo-geotrails` (`.env.emulator`), tidak pernah proyek sungguhan.
-- `npm run build:single` menghasilkan satu file HTML offline versi 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
+- `npm run build:single` menghasilkan satu file HTML offline versi klasik 2D di `dist-single/index.html` dengan vite-plugin-singlefile.
 
 ## Struktur
 ```
+index.html  3d.html  guru.html   halaman siswa (RPG 2D, Blox 3D) dan Portal Guru
+klasik/                          versi klasik: index.html (2D) dan 3d.html
 src/
-  data/map.ts          grid 36×24 tile + bangunan + posisi pos
-  data/posts.ts        6 pos bawaan (KUNCI JAWABAN)
-  data/reflection.ts   pertanyaan refleksi akhir
-  types.ts             Post, PostState, GroupState, Trail, TeacherSettings
-  state.ts             sesi aktif, pos yang dipakai (bawaan/buatan guru), pengaturan guru
-  store.ts             localStorage / IndexedDB, migrasi progres lama
-  game/                canvas, kamera, gerak, BFS
-    world.ts           lapisan tanah statis (rumput, paving, gedung, bayangan)
-    props.ts           benda tinggi yang diurutkan kedalamannya (pohon, bendera, tandon, pot)
-    sprite.ts, anim.ts avatar pixel-art RPG dan animasi jalan
-  logic/               parseNumber, grade, score, calc, compare, csv, csvParse, recap, trail, pin, image
-  ui/                  layar mulai, modal pos, panorama, kalkulator, foto, log, layar selesai, kontrol sentuh (touch.ts, stick.ts)
-    teacher/           Mode guru: kunci jawaban, foto pos, isi pos, rekap kelas, pengaturan
-firebase/              firestore.rules + rules.test.ts (tes aturan keamanan di emulator)
-tests/                 Vitest
-e2e/                   Playwright (siswa, guru, touch, blox, peta, peta3d .spec.ts; helpers.ts); e2e/cloud/ untuk fitur kelas di emulator
-public/posts/          foto & panorama per pos (pos-<id>.jpg), opsional
-peta/                  GeoTrails Peta di /peta/: index.html (siswa: daftar peta lalu bermain 2D), 3d.html (peta yang sama dalam 3D),
-                       guru.html (Portal Guru: daftar peta + editor grid). Kode di peta/src/ (mapdef, basic, validate, store,
-                       draw2d, game2d, world3d, game3d, ui/, portal/, cloud/ (config, cache, client Firebase, live + livedata untuk mode bersama), remote.ts (avatar kelompok lain))
-blox/                  prototipe 3D bergaya blok di /blox/ (index.html, main.ts, src/: game3d, world3d, avatar3d, movement, textures)
+  pages/      skrip tiap halaman: siswa2d, siswa3d, guru, klasik2d, klasik3d
+  core/       logika murni: parseNumber, grade, score, calc, compare, csv, csvParse, recap, trail, pin, image;
+              types.ts (Post, GroupState, ...), store.ts (localStorage/IndexedDB, normalize(), migrasi progres lama)
+  data/       map.ts (grid 36×24 asli), posts.ts (6 pos bawaan, KUNCI JAWABAN), reflection.ts
+  map/        MapDef (mapdef), peta Basic (basic), validate, store (peta & progres), photos, session, minimap,
+              remote (avatar kelompok lain)
+  render2d/   kanvas 2D: world/props (tanah dan benda), sprite/anim (avatar pixel-art RPG), camera, bfs,
+              draw2d + game2d (peta buatan guru), render + game (versi klasik)
+  render3d/   three.js: world3d + game3d + move3d (peta buatan guru), avatar3d, movement, textures
+  ui/         layar mulai (pilihan RPG 2D / Blox 3D), modal pos, HUD, log, selesai, mode bersama (live),
+              kalkulator, panorama, foto, kontrol sentuh (touch, stick), dom
+  portal/     Portal Guru: daftar peta, editor grid, isi pos, kelas online, pantauan langsung (monitor)
+  cloud/      Firebase: config, cache (offline), client (kelas & peta), live + livedata (mode bersama)
+  klasik/     hanya versi klasik: state, ui/ (start, hud, post, log, finish), teacher/ (Mode guru), world3d, game3d
+  styles/     base.css (token & komponen), peta.css, portal.css, blox.css
+firebase/     firestore.rules, database.rules.json + tes aturannya (emulator)
+tests/        Vitest
+e2e/          Playwright: peta, peta3d (halaman utama), touch + klasik/ (siswa, guru, blox) untuk versi klasik, cloud/ (emulator); helpers.ts
+public/posts/ foto & panorama per pos (pos-<id>.jpg), opsional
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 ```
 
@@ -74,16 +74,16 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - **Kontrol sentuh** (2D dan 3D): joystick kiri bawah dan tombol Buka (serta Lompat di 3D) muncul bila input terakhir berupa sentuhan, dan hilang lagi setelah klik mouse. Di 2D joystick memilih arah grid; di 3D analog dan mengikuti kamera.
 - **Foto pos**: urutan prioritas unggahan guru (IndexedDB) → `public/posts/pos-<id>.jpg` → ilustrasi bawaan. Foto dengan rasio ≥ 2,5 : 1 tampil sebagai panorama.
 
-## Mode guru
+## Mode guru (versi klasik)
 - Dibuka dari tombol "Mode guru" di layar mulai atau di Log, dijaga PIN lokal 4–8 angka (disimpan sebagai hash). PIN hanya penghalang ringan, bukan pengaman.
 - Tab: Kunci jawaban, Foto pos, Isi pos (edit + ekspor/impor JSON), Rekap kelas (gabungan log CSV, tidak disimpan), Pengaturan (mode demo, hapus progres, ganti PIN).
-- Posisi pos di peta selalu mengikuti pos bawaan. Isi pos buatan guru divalidasi (`logic/trail.ts`) sebelum dipakai.
+- Posisi pos di peta selalu mengikuti pos bawaan. Isi pos buatan guru divalidasi (`src/core/trail.ts`) sebelum dipakai.
 
-## GeoTrails Peta (peta buatan guru)
+## Peta buatan guru (halaman utama)
 - Peta "Basic" dibuat saat dimuat dari `src/data/map.ts` dan `src/data/posts.ts` (hanya dibaca). Basic tidak bisa diedit; guru menduplikatnya. Tes memastikan petak yang bisa dilalui dan kunci jawabannya sama persis dengan aslinya.
 - Satu peta = JSON (`MapDef`): petak (rumput, paving, lapangan, paving teduh, taman, kolam), gedung (nama, warna, lantai), objek (pohon, tiang bendera, tandon, pot, ramp, papan), titik mulai, dan 1–12 pos dengan isi dan kunci jawaban masing-masing. Pos 0 tetap pos pembuka (gerbang, petunjuk gratis).
-- Siswa hanya melihat peta yang ditampilkan guru dan lolos pemeriksaan (`peta/src/validate.ts`): ukuran 12–60 × 10–40, gedung tidak bertumpuk, titik mulai bisa dilalui, setiap pos bisa dicapai dari titik mulai, isi pos sesuai aturan yang sama dengan Mode guru.
-- Versi 3D (`peta/3d.html`) selalu dibangun dari data peta yang sama dengan 2D.
+- Siswa hanya melihat peta yang ditampilkan guru dan lolos pemeriksaan (`src/map/validate.ts`): ukuran 12–60 × 10–40, gedung tidak bertumpuk, titik mulai bisa dilalui, setiap pos bisa dicapai dari titik mulai, isi pos sesuai aturan yang sama dengan Mode guru.
+- Tampilan 3D (`/3d`) selalu dibangun dari data peta yang sama dengan 2D, dan progres kelompok sama untuk keduanya.
 - Kelas online: guru membuat kelas (kode 6 karakter) dan menerbitkan peta beserta fotonya; siswa memasukkan kode kelas untuk memuat peta itu. Peta kelas disimpan di laptop siswa agar tetap bisa dipakai offline. Model data: `classes/{kode}`, `classes/{kode}/maps/{idPeta}`, `.../photos/{uidPos}`.
 - Mode bersama (multiplayer realtime): kelompok di kelas yang sama dan peta yang sama saling melihat avatar (2D dan 3D) dan papan skor langsung (tombol "Kelas"). Guru memantau dari Portal Guru ("Pantau langsung": peta mini dengan posisi kelompok dan papan skor) dan bisa menghapus data sesi. Model data Realtime Database: `live/{kode}/owner` (uid guru), `live/{kode}/rooms/{idPeta}/{uid}` (satu kelompok, hanya ditulis kelompok itu sendiri).
 

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { blankMap, blankPost, setTile } from "../../peta/src/mapdef";
+import { blankMap, blankPost, setTile } from "../../src/map/mapdef";
 import { answer } from "../helpers";
 
 /* Teacher publishes a map to a class; a student on another laptop loads it with the class code. */
@@ -16,7 +16,7 @@ function demoMap() {
 }
 
 async function teacherPortal(page: Page) {
-  await page.goto("/peta/guru.html");
+  await page.goto("/guru");
   await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
   await page.click("#pinForm button[type=submit]");
   await expect(page.locator("#clsLogin")).toBeVisible();
@@ -32,7 +32,7 @@ test("guru menerbitkan peta ke kelas, siswa memuatnya dengan kode kelas", async 
   await t.evaluate((m) => localStorage.setItem("geotrails.peta.maps", JSON.stringify([m])), map);
 
   // Photo for the post, uploaded in the editor.
-  await t.goto(`/peta/guru.html?edit=${map.id}`);
+  await t.goto(`/guru?edit=${map.id}`);
   await t.click('[data-tool="select"]');
   const box = (await t.locator("#edCanvas").boundingBox())!;
   await t.mouse.click(box.x + 10.5 * 22, box.y + 5.5 * 22);
@@ -54,7 +54,7 @@ test("guru menerbitkan peta ke kelas, siswa memuatnya dengan kode kelas", async 
   // ---- Student laptop (separate storage)
   const studentCtx = await browser.newContext();
   const s = await studentCtx.newPage();
-  await s.goto("/peta/");
+  await s.goto("/");
   await expect(s.locator(".map-card")).toHaveCount(1); // only Basic before joining
   await s.fill("#classCode", code.toLowerCase());
   await s.click("#classForm button[type=submit]");
@@ -74,7 +74,7 @@ test("guru menerbitkan peta ke kelas, siswa memuatnya dengan kode kelas", async 
 
   // Offline (Firestore unreachable): the stored copy is used.
   await s.route(/:8080\//, (r) => r.abort());
-  await s.goto("/peta/");
+  await s.goto("/");
   await expect(s.locator("#classStatus")).toHaveText("Offline: memakai peta kelas yang tersimpan.", { timeout: 30_000 });
   await expect(s.locator(".map-card", { hasText: "Taman Kota" })).toContainText("Lanjutkan: Kelompok A");
   await s.unroute(/:8080\//);
@@ -92,13 +92,13 @@ test("guru menerbitkan peta ke kelas, siswa memuatnya dengan kode kelas", async 
   await row.getByRole("button", { name: "Yakin? Klik lagi" }).click();
   await expect(cls).toContainText("Belum ada peta yang diterbitkan.");
 
-  await s.goto("/peta/");
+  await s.goto("/");
   await expect(s.locator("#classStatus")).toHaveText("0 peta dari kelas 9A Matematika.");
   await expect(s.locator(".map-card", { hasText: "Taman Kota" })).toHaveCount(0);
 });
 
 test("kode kelas yang salah ditolak", async ({ page }) => {
-  await page.goto("/peta/");
+  await page.goto("/");
   await page.fill("#classCode", "12");
   await page.click("#classForm button[type=submit]");
   await expect(page.locator("#classStatus")).toHaveText("Kode kelas terdiri dari 6 huruf/angka.");

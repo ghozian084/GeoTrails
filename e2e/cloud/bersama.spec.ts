@@ -9,7 +9,7 @@ const signIn = (p: Page, sub: string, name: string) =>
 async function student(browser: Browser, code: string, group: string): Promise<Page> {
   const ctx = await browser.newContext();
   const s = await ctx.newPage();
-  await s.goto("/peta/");
+  await s.goto("/");
   await s.fill("#classCode", code);
   await s.click("#classForm button[type=submit]");
   await expect(s.locator("#classStatus")).toContainText("dari kelas 9B");
@@ -25,7 +25,7 @@ test("dua kelompok bermain bersama, guru memantau lalu menghapus data sesi", asy
   test.setTimeout(180_000);
   // ---- Teacher creates the class (and owns its live rooms).
   const t = await (await browser.newContext()).newPage();
-  await t.goto("/peta/guru.html");
+  await t.goto("/guru");
   await t.fill("#pin1", "2468"); await t.fill("#pin2", "2468");
   await t.click("#pinForm button[type=submit]");
   await signIn(t, "guru-live", "Pak Guru");

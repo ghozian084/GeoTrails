@@ -1,18 +1,24 @@
-import type { Game } from "../game/game";
-import { closeness, CLOSENESS_MSG, percentDiff } from "../logic/compare";
-import { grade } from "../logic/grade";
-import { isPanorama } from "../logic/image";
-import { parseNumber } from "../logic/parseNumber";
-import { greenScore, HINT_COST, isFreePost, orangeScore } from "../logic/score";
-import { isGateDone, persist, posts, S } from "../state";
-import type { Zone } from "../types";
+import type { Game } from "../render2d/game";
+import { closeness, CLOSENESS_MSG, percentDiff } from "../core/compare";
+import { grade } from "../core/grade";
+import { isPanorama } from "../core/image";
+import { parseNumber } from "../core/parseNumber";
+import { greenScore, HINT_COST, orangeScore } from "../core/score";
+import type { Zone } from "../core/types";
+import { calcHtml, mountCalc } from "./calculator";
 import { $, esc, fmt, toast } from "./dom";
+import { mountPano } from "./panorama";
+import { SCENES } from "./scenes";
+import { photoFor } from "../map/photos";
+import { app, isGateDone, map, persist, S } from "../map/session";
 import { maybeFinish } from "./finish";
 import { updateHud } from "./hud";
-import { calcHtml, mountCalc } from "./calculator";
-import { mountPano } from "./panorama";
-import { photoFor } from "./photos";
-import { SCENES } from "./scenes";
+
+/*
+ * Post modal for the Peta app: the original src/ui/post.ts adapted to maps with any number
+ * of posts. Pos 0 is the gate and has free hints, as in the original trail.
+ */
+const isFreePost = (id: number) => id === 0;
 
 /** Max length of a worksheet note. */
 const WORK_MAX = 2000;
@@ -25,7 +31,7 @@ let cur: number | null = null, openedAt = 0;
 let lastFb: { id: number; zone: Zone; title: string; msg: string } | null = null;
 
 export function openPost(id: number): void {
-  if (id > 0 && !isGateDone()) { toast("Selesaikan Pos 0 (tiang bendera) dulu"); return; }
+  if (id > 0 && !isGateDone()) { toast(`Selesaikan Pos 0 (${app.posts[0].title}) dulu`); return; }
   game.stop(); cur = id; openedAt = Date.now(); renderPost(); $("postOv").hidden = false;
   setTimeout(() => { const i = $<HTMLInputElement>("ans"); if (i && !i.disabled) i.focus(); }, 50);
 }
@@ -39,18 +45,21 @@ export function closePost(): void {
 
 export function closeAll(): void {
   if (!$("postOv").hidden) closePost();
-  $("logOv").hidden = true; $("finOv").hidden = true; $("teachOv").hidden = true;
+  $("logOv").hidden = true; $("finOv").hidden = true;
 }
 
 function renderPost(): void {
   const id = cur!;
-  const p = posts[id], st = S().posts[id], done = !!st.result, free = isFreePost(id);
-  const photo = photoFor(p.id);
-  // A wide photo becomes a panorama; without a photo the built-in illustration is used.
-  const pano = photo ? isPanorama(photo.w, photo.h) : p.media === "pano";
+  const p = app.posts[id], st = S().posts[id], done = !!st.result, free = isFreePost(id);
+  const mp = map().posts[id], photo = photoFor(map().id, mp.uid);
+  const scene = mp.scene != null ? SCENES[mp.scene] : undefined;
+  // A wide photo becomes a panorama; otherwise the built-in illustration, if this post has one.
+  const pano = photo ? isPanorama(photo.w, photo.h) : !!scene && p.media === "pano";
   const media = pano
     ? `<div class="pano" id="pano"><span class="badge">PANORAMA 360°</span><div class="ctl"><button type="button" data-l aria-label="Putar kiri">◀</button><button type="button" data-z>Perbesar</button><button type="button" data-r aria-label="Putar kanan">▶</button></div></div>`
-    : photo ? `<div class="frame"><img src="${esc(photo.url)}" alt="Foto ${esc(p.title)}"></div>` : `<div class="frame">${SCENES[p.id]()}</div>`;
+    : photo ? `<div class="frame"><img src="${esc(photo.url)}" alt="Foto ${esc(p.title)}"></div>`
+    : scene ? `<div class="frame">${scene()}</div>`
+    : `<div class="frame no-photo"><div><b>Foto belum tersedia</b><span>Bayangkan objeknya atau amati langsung: ${esc(p.place || p.title)}</span></div></div>`;
   const hintsHtml = p.hints.slice(0, st.hints).map((h, i) => `<div class="hint"><b>P${i + 1}</b>${esc(h)}</div>`).join("");
   const canHint = st.hints < p.hints.length && !done;
   let fbHtml = "";
@@ -61,7 +70,7 @@ function renderPost(): void {
   }
   const value = done ? esc(fmt(st.answer)) : (st.attempts.length && lastFb && lastFb.id === id ? esc(fmt(st.attempts[st.attempts.length - 1])) : "");
   $("post").innerHTML = `
-    <div class="media"><div class="media-in">${media}<div class="cap"><span>${photo ? "Foto" : "Ilustrasi pengganti foto"} · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div></div>
+    <div class="media"><div class="media-in">${media}<div class="cap"><span>${photo ? "Foto" : scene ? "Ilustrasi pengganti foto" : "Tanpa foto"} · ${esc(p.place)}</span><span>Data di foto belum tentu semuanya dipakai</span></div></div></div>
     <div class="body">
       <header><span class="chip">POS ${p.id}</span><h2 id="ptitle">${esc(p.title)}</h2><button class="x" id="xBtn" aria-label="Tutup">×</button></header>
       <div class="concept">${esc(p.concept)}</div>
@@ -97,7 +106,7 @@ function renderPost(): void {
   $("post").setAttribute("aria-labelledby", "ptitle");
   if (pano) {
     if (photo) mountPano($("pano"), photo.url, photo.w / photo.h, p.focus);
-    else mountPano($("pano"), "data:image/svg+xml;charset=utf-8," + encodeURIComponent(SCENES[p.id]()), 4, p.focus);
+    else mountPano($("pano"), "data:image/svg+xml;charset=utf-8," + encodeURIComponent(scene!()), 4, p.focus);
   }
   $("xBtn").onclick = closePost;
   if ($("closeBtn")) $("closeBtn").onclick = closePost;
@@ -136,7 +145,7 @@ function physSummary(answer: number | null, physical: number | null, unit: strin
 
 function check(): void {
   const id = cur!;
-  const p = posts[id], st = S().posts[id], free = isFreePost(id);
+  const p = app.posts[id], st = S().posts[id], free = isFreePost(id);
   const v = parseNumber($<HTMLInputElement>("ans").value);
   if (!isFinite(v)) { lastFb = { id, zone: "red", title: "Belum terbaca", msg: "Tulis jawaban berupa angka saja, misalnya 12,5." }; renderPost(); return; }
   st.attempts.push(v); st.answer = v;

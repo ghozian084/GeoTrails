@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CalcError, evaluate } from "../src/logic/calc";
+import { CalcError, evaluate } from "../src/core/calc";
 
 describe("kalkulator (mode derajat)", () => {
   it.each([

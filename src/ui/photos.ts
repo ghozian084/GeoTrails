@@ -1,5 +1,5 @@
-import { fitWithin, maxSide } from "../logic/image";
-import { deletePhoto, getPhoto, putPhoto } from "../store";
+import { fitWithin, maxSide } from "../core/image";
+import { deletePhoto, getPhoto, putPhoto } from "../core/store";
 
 /*
  * Real photos for posts. Priority: teacher upload (IndexedDB, this laptop only) →

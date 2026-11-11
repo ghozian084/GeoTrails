@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { POSTS } from "../src/data/posts";
-import { toCsv } from "../src/logic/csv";
-import { parseCsv } from "../src/logic/csvParse";
-import { parseLogs, summarize } from "../src/logic/recap";
-import { fresh } from "../src/store";
+import { toCsv } from "../src/core/csv";
+import { parseCsv } from "../src/core/csvParse";
+import { parseLogs, summarize } from "../src/core/recap";
+import { fresh } from "../src/core/store";
 
 function log(name: string, f: (S: ReturnType<typeof fresh>) => void) {
   const S = fresh(name, "#000", POSTS);

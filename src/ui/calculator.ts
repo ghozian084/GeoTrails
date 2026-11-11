@@ -1,4 +1,4 @@
-import { CalcError, evaluate } from "../logic/calc";
+import { CalcError, evaluate } from "../core/calc";
 import { $, esc, fmt } from "./dom";
 
 /* Degree-mode scientific calculator panel inside the post modal. */

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { answer } from "./helpers";
 
-/* GeoTrails Peta (/peta/): map list for students and the teacher portal with its grid editor. */
+/* Student pages (/) and teacher portal (/guru): map list for students and the teacher portal with its grid editor. */
 
 /** Hold a key until the prompt for `title` appears. */
 async function walkUntil(page: Page, key: string, title: string) {
@@ -11,7 +11,7 @@ async function walkUntil(page: Page, key: string, title: string) {
 }
 
 async function play(page: Page, mapName: string, group: string) {
-  await page.goto("/peta/");
+  await page.goto("/");
   await page.locator(".map-card", { hasText: mapName }).click();
   await page.fill("#gname", group);
   await page.click("#startForm button[type=submit]");
@@ -19,7 +19,7 @@ async function play(page: Page, mapName: string, group: string) {
 }
 
 test("siswa: daftar peta, peta Basic sama dengan trail asli, data aplikasi asli tidak tersentuh", async ({ page }) => {
-  await page.goto("/peta/");
+  await page.goto("/");
   await expect(page.locator(".map-card").first()).toContainText("Basic");
   await expect(page.locator(".map-card").first()).toContainText("6 pos · 36×24 petak");
   await play(page, "Basic", "Kelompok Peta");
@@ -39,7 +39,7 @@ test("siswa: daftar peta, peta Basic sama dengan trail asli, data aplikasi asli 
 });
 
 test("guru membuat peta di editor grid, siswa memainkannya", async ({ page }) => {
-  await page.goto("/peta/guru.html");
+  await page.goto("/guru");
   await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
   await page.click("#pinForm button[type=submit]");
   await page.click("#newMap");
@@ -87,7 +87,7 @@ test("guru membuat peta di editor grid, siswa memainkannya", async ({ page }) =>
 });
 
 test("guru: ekspor lalu impor peta, salinan Basic bisa diedit", async ({ page }) => {
-  await page.goto("/peta/guru.html");
+  await page.goto("/guru");
   await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
   await page.click("#pinForm button[type=submit]");
   await page.locator(".portal-card", { hasText: "Basic" }).getByRole("button", { name: "Duplikat untuk diedit" }).click();
@@ -105,14 +105,31 @@ test("guru: ekspor lalu impor peta, salinan Basic bisa diedit", async ({ page })
   await expect(page.locator(".problems .ok")).toBeVisible();
 });
 
-test("siswa: tautan 3D tetap di /peta/ walau halaman dibuka tanpa garis miring (seperti di Vercel)", async ({ page, baseURL }) => {
-  // Vercel serves peta/index.html at /peta (no redirect to /peta/); reproduce that.
-  const html = await (await page.request.get("/peta/")).text();
-  await page.route(/\/peta(\?.*)?$/, (r) => r.fulfill({ contentType: "text/html", body: html }));
-  await page.goto("/peta");
-  await expect(page).toHaveURL(`${baseURL}/peta/`);
+test("siswa memilih tampilan RPG 2D atau Blox 3D sebelum masuk; peta dan progres ikut", async ({ page, baseURL }) => {
+  await page.goto("/");
   await page.locator(".map-card", { hasText: "Basic" }).click();
-  await page.fill("#gname", "Kelompok Vercel");
+  const pick = page.locator(".mode-pick");
+  await expect(pick.getByRole("radio", { name: /RPG 2D/ })).toHaveAttribute("aria-checked", "true");
+  await page.fill("#gname", "Kelompok Pilih");
   await page.click("#startForm button[type=submit]");
-  expect(await page.locator("#to3d").evaluate((a) => (a as HTMLAnchorElement).href)).toBe(`${baseURL}/peta/3d.html?map=basic`);
+  expect(await page.locator("#to3d").evaluate((a) => (a as HTMLAnchorElement).href)).toBe(`${baseURL}/3d?map=basic`);
+
+  // Back on the start screen, switch to Blox 3D: same map, same saved group.
+  await page.goto("/?map=basic");
+  await pick.getByRole("radio", { name: /Blox 3D/ }).click();
+  await expect(page).toHaveURL(`${baseURL}/3d?map=basic`);
+  await expect(page.locator(".mode-pick").getByRole("radio", { name: /Blox 3D/ })).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator("#resumeBtn")).toHaveText("Lanjutkan: Kelompok Pilih");
+});
+
+test("versi klasik tetap bisa dibuka dari layar mulai, juga tanpa garis miring di alamat", async ({ page, baseURL }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Versi klasik" }).click();
+  await expect(page).toHaveURL(`${baseURL}/klasik/`);
+  await expect(page.locator("#startTitle")).toBeVisible();
+  // Hosts may serve klasik/index.html at /klasik: links must still stay inside /klasik/.
+  const html = await (await page.request.get("/klasik/")).text();
+  await page.route(/\/klasik(\?.*)?$/, (r) => r.fulfill({ contentType: "text/html", body: html }));
+  await page.goto("/klasik");
+  await expect(page).toHaveURL(`${baseURL}/klasik/`);
 });

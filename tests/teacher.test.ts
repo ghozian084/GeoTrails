@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkPin, hashPin, validPin } from "../src/logic/pin";
+import { checkPin, hashPin, validPin } from "../src/core/pin";
 
 describe("PIN guru", () => {
   it("hanya 4–8 angka", () => {
@@ -25,7 +25,7 @@ describe("PIN guru", () => {
   });
 });
 
-import { fitWithin, isPanorama, maxSide } from "../src/logic/image";
+import { fitWithin, isPanorama, maxSide } from "../src/core/image";
 
 describe("ukuran foto pos", () => {
   it("foto lebar dianggap panorama", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { START, walk } from "../src/data/map";
 import { POSTS } from "../src/data/posts";
-import { bfs } from "../src/game/bfs";
+import { bfs } from "../src/render2d/bfs";
 
 describe("BFS di denah", () => {
   it.each(POSTS)("Pos $id bisa dicapai dari titik awal", (p) => {

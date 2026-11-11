@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { mix, parseColor, shade, withAlpha } from "../src/game/color";
-import { groundAt, rng } from "../src/game/world";
+import { mix, parseColor, shade, withAlpha } from "../src/render2d/color";
+import { groundAt, rng } from "../src/render2d/world";
 
 describe("jenis permukaan denah", () => {
   it("membedakan lapangan, paving, rumput, taman, dan gedung", () => {

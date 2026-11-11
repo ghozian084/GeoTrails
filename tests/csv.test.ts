@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { POSTS } from "../src/data/posts";
-import { toCsv } from "../src/logic/csv";
-import { fresh } from "../src/store";
+import { toCsv } from "../src/core/csv";
+import { fresh } from "../src/core/store";
 
 const header = (csv: string) => csv.split("\n")[0].split(",");
 

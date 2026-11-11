@@ -1,8 +1,8 @@
 import { devices, expect, type Page } from "@playwright/test";
 import { walk } from "../src/data/map";
 import { POSTS } from "../src/data/posts";
-import { bfs, type Pt } from "../src/game/bfs";
-import { follow, tileSize } from "../src/game/camera";
+import { bfs, type Pt } from "../src/render2d/bfs";
+import { follow, tileSize } from "../src/render2d/camera";
 
 /* Shared steps for the end-to-end tests. Map clicks reuse the app's own camera and BFS. */
 
@@ -12,7 +12,7 @@ export const PHONE = (({ defaultBrowserType, ...rest }) => rest)(devices["Pixel 
 export const ANSWERS = ["12,6", "2.307", "4,8", "12", "82,7", "121"];
 
 export async function startGroup(page: Page, name = "Kelompok Uji"): Promise<void> {
-  await page.goto("/");
+  await page.goto("/klasik/");
   await page.fill("#gname", name);
   await press(page, "#startForm button[type=submit]");
   await expect(page.locator("#startOv")).toBeHidden();
