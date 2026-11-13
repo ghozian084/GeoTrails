@@ -1,7 +1,10 @@
 {
-  "database": {
-    "rules": "firebase/database.rules.json"
-  },
+  "database": [
+    {
+      "instance": "geotrails-live",
+      "rules": "firebase/database.rules.json"
+    }
+  ],
   "firestore": [
     {
       "database": "geotrails",
