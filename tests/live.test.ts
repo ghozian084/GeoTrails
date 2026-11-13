@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { angleOf, deduped, dirOf, doneCount, parseRoom, postString, ranked, round2, type LivePlayer } from "../src/cloud/livedata";
 import { smoother } from "../src/map/remote";
+import { countdown, noControl, parseControl, waiting } from "../src/map/control";
 import type { GroupState } from "../src/core/types";
 
 /* Multiplayer (live rooms): data helpers and avatar smoothing. */
@@ -58,5 +59,26 @@ describe("gerak avatar kelompok lain", () => {
     step([R(1, 1)], 0.1);
     expect(step([R(20, 10)], 0.1)[0].rx).toBe(20);
     expect(step([], 0.1)).toEqual([]);
+  });
+});
+
+describe("kendali kelas oleh guru", () => {
+  it("dokumen kendali dibaca dengan aman", () => {
+    const c = parseControl({ hold: true, startAt: 5000, allOpen: true, msg: { t: "Kumpul", at: 9 }, locked: { "2": true, "4": false, x: true } });
+    expect(c.hold).toBe(true);
+    expect(c.allOpen).toBe(true);
+    expect(c.msg).toEqual({ t: "Kumpul", at: 9 });
+    expect([...c.locked]).toEqual([2]);
+    expect(parseControl(null)).toEqual(noControl());
+    expect(parseControl({ msg: { t: 5 } }).msg).toBeNull();
+  });
+
+  it("hitung mundur mulai serentak dan menunggu aba-aba", () => {
+    const c = { ...noControl(), startAt: 10_000 };
+    expect(countdown(c, 7_100)).toBe(3);
+    expect(waiting(c, 7_100)).toBe(true);
+    expect(countdown(c, 10_000)).toBe(0);
+    expect(waiting(c, 10_001)).toBe(false);
+    expect(waiting({ ...noControl(), hold: true }, 0)).toBe(true);
   });
 });

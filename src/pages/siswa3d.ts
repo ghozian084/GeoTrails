@@ -14,7 +14,8 @@ import { initTouch } from "../ui/touch";
 import { createMapGame3D } from "../render3d/game3d";
 import { toPosts, type MapDef } from "../map/mapdef";
 import { loadPhotos } from "../map/photos";
-import { app, demo, persist } from "../map/session";
+import { control, serverNow, waiting } from "../map/control";
+import { allOpen, app, demo, persist } from "../map/session";
 import { showPrompt, updateHud } from "../ui/hud";
 import { openLog } from "../ui/log";
 import { closeAll, closePost, openPost, setGame } from "../ui/post";
@@ -26,7 +27,8 @@ import { initStart } from "../ui/start";
 // Canvas labels need the bundled fonts before the world is built.
 await Promise.all(['700 56px "Chakra Petch"', '700 52px "Atkinson Hyperlegible"', '700 54px "JetBrains Mono"'].map((f) => document.fonts.load(f).catch(() => [])));
 
-const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden;
+// Also stops walking while the teacher holds the class or counts down to a synchronised start.
+const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden || waiting(control(), serverNow());
 
 /** Show why 3D could not start (instead of a button that seems to do nothing) and offer 2D. */
 function fail3d(map: MapDef | null, e: unknown): void {
@@ -45,7 +47,7 @@ function begin(map: MapDef, S: GroupState): void {
 function start(map: MapDef, S: GroupState): void {
   app.map = map; app.posts = toPosts(map); app.S = S;
   const game = createMapGame3D($<HTMLCanvasElement>("map"), $("stage"), map, {
-    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo, others,
+    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen, others,
   });
   setGame(game);
   const openNearby = () => { const p = game.nearPost(); if (p) openPost(p.id); else toast("Dekati salah satu pos dulu."); };

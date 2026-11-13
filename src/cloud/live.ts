@@ -5,12 +5,14 @@ import {
 } from "firebase/database";
 import { firebase } from "./client";
 import { emulatorHost } from "./config";
+import { parseControl, serverNow, setServerOffset, type Control } from "../map/control";
 import { parseRoom, STALE_MS, type LivePlayer } from "./livedata";
 
 /*
  * Live (multiplayer) rooms on the Realtime Database, one per class and map:
  *   live/{code}/owner                     uid of the teacher who owns the class
  *   live/{code}/rooms/{mapId}/{uid}       one group: LivePlayer without uid
+ *   live/{code}/control/{mapId}           the teacher's controls: hold, startAt, allOpen, msg, locked
  * Students sign in anonymously (no personal data); each group writes only its own node.
  */
 
@@ -20,10 +22,18 @@ function database(): Database {
   if (db) return db;
   db = getDatabase(firebase().app);
   if (emulatorHost) connectDatabaseEmulator(db, emulatorHost, 9000);
+  // Server clock offset, so countdowns end at the same moment on every laptop.
+  onValue(ref(db, ".info/serverTimeOffset"), (s) => setServerOffset(Number(s.val()) || 0));
   return db;
 }
 
 const roomRef = (code: string, mapId: string) => ref(database(), `live/${code}/rooms/${mapId}`);
+const controlRef = (code: string, mapId: string) => ref(database(), `live/${code}/control/${mapId}`);
+
+/** The teacher's controls for a room (students and the teacher's monitor). */
+export function watchControl(code: string, mapId: string, cb: (c: Control) => void): () => void {
+  return onValue(controlRef(code, mapId), (snap) => cb(parseControl(snap.val())), () => cb(parseControl(null)));
+}
 
 /** Remove groups that have not been updated for 24 hours (allowed for anyone in the class). */
 async function sweep(code: string, mapId: string): Promise<void> {
@@ -42,7 +52,7 @@ export interface LiveRoom {
 }
 
 /** Join a room as a group and listen to everyone in it. */
-export async function joinRoom(code: string, mapId: string, first: LiveState, onPlayers: (ps: LivePlayer[]) => void): Promise<LiveRoom> {
+export async function joinRoom(code: string, mapId: string, first: LiveState, onPlayers: (ps: LivePlayer[]) => void, onControl: (c: Control) => void): Promise<LiveRoom> {
   const { auth } = firebase();
   await auth.authStateReady();
   const user = auth.currentUser ?? (await signInAnonymously(auth)).user;
@@ -50,7 +60,9 @@ export async function joinRoom(code: string, mapId: string, first: LiveState, on
   await sweep(code, mapId).catch(() => undefined);
   await set(me, { ...first, on: true, t: serverTimestamp() });
   await onDisconnect(me).update({ on: false, t: serverTimestamp() });
-  const unsub = onValue(roomRef(code, mapId), (snap) => onPlayers(parseRoom(snap.val())));
+  const unsubRoom = onValue(roomRef(code, mapId), (snap) => onPlayers(parseRoom(snap.val())));
+  const unsubControl = watchControl(code, mapId, onControl);
+  const unsub = () => { unsubRoom(); unsubControl(); };
   let last: LiveState = { ...first }, left = false;
   return {
     uid,
@@ -83,7 +95,26 @@ export function watchRoom(code: string, mapId: string, cb: (ps: LivePlayer[]) =>
   return onValue(roomRef(code, mapId), (snap) => cb(parseRoom(snap.val())), () => cb([]));
 }
 
-/** Delete the session data of a room (teacher who owns the class). */
+/** Delete the session data of a room, and its controls (teacher who owns the class). */
 export async function clearRoom(code: string, mapId: string): Promise<void> {
   await remove(roomRef(code, mapId));
+  await remove(controlRef(code, mapId));
 }
+
+/* Teacher controls (only the class owner may write them). */
+
+export const setHold = (code: string, mapId: string, hold: boolean): Promise<void> =>
+  update(controlRef(code, mapId), { hold });
+
+/** Release everyone at the same moment, a few seconds from now (server clock). */
+export const startTogether = (code: string, mapId: string, seconds = 3): Promise<void> =>
+  update(controlRef(code, mapId), { hold: false, startAt: serverNow() + seconds * 1000 });
+
+export const sendMessage = (code: string, mapId: string, text: string): Promise<void> =>
+  set(ref(database(), `live/${code}/control/${mapId}/msg`), { t: text.slice(0, 140), at: serverTimestamp() });
+
+export const setAllOpen = (code: string, mapId: string, open: boolean): Promise<void> =>
+  update(controlRef(code, mapId), { allOpen: open });
+
+export const setLocked = (code: string, mapId: string, post: number, locked: boolean): Promise<void> =>
+  set(ref(database(), `live/${code}/control/${mapId}/locked/${post}`), locked ? true : null);

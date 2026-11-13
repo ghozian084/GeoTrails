@@ -126,3 +126,13 @@ body.portal{overflow:auto}
 .pin-forgot{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:grid;gap:6px;justify-items:start}
 .pin-forgot small{color:var(--muted)}
 .pin-note{margin:0 0 6px;color:var(--good);font-weight:700}
+
+/* Class controls in the live monitor */
+.mon-ctrl{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.mon-pick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mon-state{color:var(--muted);font-size:14px}
+.mon-msg input{flex:1;min-width:200px}
+.mon-posts-ctl{align-items:center}
+.mon-posts-ctl>span{color:var(--muted);font-size:14px}
+.mon-chip{padding:3px 10px;font-size:13px}
+.mon-live{display:grid;gap:12px}

@@ -82,4 +82,28 @@ describe("ruang langsung", () => {
     await assertSucceeds(teacher("guru-a").ref("live/ABC234/rooms").remove());
     await assertFails(teacher("guru-a").ref(`${ROOM}/siswa-b`).set(player())); // the teacher cannot write as a group
   });
+
+  describe("kendali kelas oleh guru", () => {
+    const CTRL = "live/ABC234/control/basic";
+    it("hanya pemilik kelas yang mengatur; siswa di kelas membaca", async () => {
+      const g = teacher("guru-a");
+      await assertSucceeds(g.ref(CTRL).update({ hold: true, allOpen: false, locked: { "3": true } }));
+      await assertSucceeds(g.ref(`${CTRL}/msg`).set({ t: "Kumpul di lapangan", at: NOW }));
+      await assertSucceeds(g.ref(`${CTRL}/startAt`).set(Date.now() + 4000));
+      await assertSucceeds(student("siswa-a").ref(CTRL).once("value"));
+      await assertFails(env.unauthenticatedContext().database().ref(CTRL).once("value"));
+      await assertFails(student("siswa-a").ref(`${CTRL}/hold`).set(false));
+      await assertFails(teacher("guru-b").ref(`${CTRL}/hold`).set(false));
+    });
+
+    it("isi perintah dibatasi", async () => {
+      const g = teacher("guru-a");
+      await assertFails(g.ref(`${CTRL}/msg`).set({ t: "x".repeat(141), at: NOW }));
+      await assertFails(g.ref(`${CTRL}/msg`).set({ t: "Halo", at: 1 }));
+      await assertFails(g.ref(`${CTRL}/startAt`).set(Date.now() + 3_600_000));
+      await assertFails(g.ref(`${CTRL}/locked/12`).set(true));
+      await assertFails(g.ref(`${CTRL}/lain`).set(true));
+      await assertFails(g.ref("live/ABC234/control/peta~1/hold").set(true));
+    });
+  });
 });

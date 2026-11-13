@@ -13,7 +13,8 @@ import { initTouch } from "../ui/touch";
 import { createMapGame } from "../render2d/game2d";
 import { toPosts, type MapDef } from "../map/mapdef";
 import { loadPhotos } from "../map/photos";
-import { app, demo, persist } from "../map/session";
+import { control, serverNow, waiting } from "../map/control";
+import { allOpen, app, demo, persist } from "../map/session";
 import { showPrompt, updateHud } from "../ui/hud";
 import { openLog } from "../ui/log";
 import { closeAll, closePost, openPost, setGame } from "../ui/post";
@@ -22,12 +23,13 @@ import { initStart } from "../ui/start";
 
 /* Student page (/): pick a map (Basic or a teacher-made one), then play it in 2D. */
 
-const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden;
+// Also stops walking while the teacher holds the class or counts down to a synchronised start.
+const modalOpen = () => !$("postOv").hidden || !$("logOv").hidden || !$("finOv").hidden || waiting(control(), serverNow());
 
 function begin(map: MapDef, S: GroupState): void {
   app.map = map; app.posts = toPosts(map); app.S = S;
   const game = createMapGame($<HTMLCanvasElement>("map"), $("stage"), map, {
-    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen: demo, others,
+    getState: () => app.S, modalOpen, openPost, closeAll, save: persist, onNearPost: showPrompt, allOpen, others,
   });
   setGame(game);
   const openNearby = () => { const p = game.nearPost(); if (p) openPost(p.id); else toast("Dekati salah satu pos dulu."); };
