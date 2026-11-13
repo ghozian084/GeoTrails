@@ -107,3 +107,9 @@ body.portal{overflow:auto}
 .mon-posts span.green{background:var(--good)}
 .mon-posts span.orange{background:var(--warn)}
 .mon-note{color:var(--muted)}
+
+/* Where the teacher's maps are stored (account sync) */
+.sync-line{margin:6px 0 0;font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sync-line .btn{padding:2px 10px;font-size:13px}
+.sync-line.ok{color:var(--good)}
+.sync-line.offline{color:var(--warn)}

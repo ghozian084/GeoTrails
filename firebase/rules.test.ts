@@ -105,3 +105,42 @@ describe("foto pos", () => {
     await assertFails(a.doc(path).set(photo({ nama: "Budi" })));
   });
 });
+
+describe("peta guru di akun Google", () => {
+  const myMap = (extra: Record<string, unknown> = {}) => ({ name: "Taman", json: "{}", photos: { p1: "abc" }, updatedAt: Date.now(), deleted: false, ...extra });
+  const path = "teachers/guru-a/maps/m-1";
+
+  it("guru menyimpan, membaca, dan menghapus petanya sendiri", async () => {
+    const a = env.authenticatedContext("guru-a").firestore();
+    await assertSucceeds(a.doc(path).set(myMap()));
+    await assertSucceeds(a.doc(path).get());
+    await assertSucceeds(a.collection("teachers/guru-a/maps").get());
+    await assertSucceeds(a.doc(`${path}/photos/p1`).set(photo()));
+    await assertSucceeds(a.doc(`${path}/photos/p1`).get());
+    await assertSucceeds(a.doc(path).set(myMap({ name: "", json: "", photos: {}, deleted: true })));
+    await assertSucceeds(a.doc(`${path}/photos/p1`).delete());
+  });
+
+  it("guru lain, siswa anonim, dan pengunjung tidak bisa membaca atau menulis", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => { await ctx.firestore().doc(path).set(myMap()); });
+    for (const db of [
+      env.authenticatedContext("guru-b").firestore(),
+      env.authenticatedContext("guru-a", { firebase: { sign_in_provider: "anonymous" } }).firestore(),
+      env.unauthenticatedContext().firestore(),
+    ]) {
+      await assertFails(db.doc(path).get());
+      await assertFails(db.collection("teachers/guru-a/maps").get());
+      await assertFails(db.doc(path).set(myMap()));
+      await assertFails(db.doc(`${path}/photos/p1`).set(photo()));
+    }
+  });
+
+  it("isi dokumen dibatasi", async () => {
+    const a = env.authenticatedContext("guru-a").firestore();
+    await assertFails(a.doc(path).set({ ...myMap(), email: "x@y" }));
+    await assertFails(a.doc(path).set(myMap({ json: "x".repeat(900001) })));
+    await assertFails(a.doc(path).set(myMap({ updatedAt: "kemarin" })));
+    await assertFails(a.doc(path).set(myMap({ photos: Object.fromEntries(Array.from({ length: 13 }, (_, i) => [`p${i}`, "s"])) })));
+    await assertFails(a.doc(`${path}/photos/p1`).set(photo({ type: "image/png" })));
+  });
+});

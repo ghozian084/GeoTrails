@@ -13,6 +13,28 @@ service cloud.firestore {
       return teacher() && get(/databases/$(db)/documents/classes/$(code)).data.ownerUid == request.auth.uid;
     }
 
+    // Each teacher's own maps, synced between their devices. Only that teacher can read or write them.
+    match /teachers/{uid}/maps/{mapId} {
+      function me() { return teacher() && request.auth.uid == uid; }
+      allow read, delete: if me();
+      allow create, update: if me()
+        && mapId.size() <= 60
+        && request.resource.data.keys().hasOnly(['name', 'json', 'photos', 'updatedAt', 'deleted'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.json is string && request.resource.data.json.size() < 900000
+        && request.resource.data.photos is map && request.resource.data.photos.size() <= 12
+        && request.resource.data.updatedAt is number
+        && request.resource.data.deleted is bool;
+
+      match /photos/{postUid} {
+        allow read, delete: if me();
+        allow create, update: if me()
+          && request.resource.data.keys().hasOnly(['data', 'type'])
+          && request.resource.data.type == 'image/jpeg'
+          && request.resource.data.data is string && request.resource.data.data.size() < 950000;
+      }
+    }
+
     match /classes/{code} {
       // Reading one class needs its code; only the owner can list their own classes.
       allow get: if true;

@@ -9,6 +9,7 @@ import { mapProblems, SIZE } from "../map/validate";
 import { showEditor } from "./editor";
 import { classSection } from "./classes";
 import { exportMap, parseMap } from "./io";
+import { onListShown } from "./sync";
 
 /* Portal home: every map with its status and actions. */
 
@@ -16,7 +17,8 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
   const maps = allMaps();
   history.replaceState(null, "", location.pathname);
   el.innerHTML = `<section class="portal-head">
-      <div><h1>Daftar peta</h1><p class="sub">Siswa melihat peta yang ditampilkan di layar awal GeoTrails Peta. Peta Basic adalah denah sekolah bawaan.</p></div>
+      <div><h1>Daftar peta</h1><p class="sub">Siswa melihat peta yang ditampilkan di layar awal GeoTrails. Peta Basic adalah denah sekolah bawaan.</p>
+        <p class="sync-line" id="syncLine" aria-live="polite" hidden></p></div>
       <div class="row">
         <button class="btn primary" id="newMap">Peta baru</button>
         <label class="btn">Impor JSON<input type="file" accept=".json,application/json" id="importMap" hidden></label>
@@ -67,6 +69,8 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
   const box = $("classBox");
   const drawClasses = (): void => { if (box.isConnected) classSection(box, drawClasses, () => showList(el, teacher)); };
   drawClasses();
+
+  onListShown(() => { if (el.isConnected && el.querySelector(".portal-grid")) showList(el, teacher); });
 
   const form = $<HTMLFormElement>("newForm");
   $("newMap").onclick = () => { form.hidden = false; $("nmName").focus(); };

@@ -13,6 +13,7 @@ import { loadTeacher, saveTeacher } from "../core/store";
 import { $ } from "../ui/dom";
 import { showEditor } from "../portal/editor";
 import { showList } from "../portal/list";
+import { initSync } from "../portal/sync";
 import { getMap } from "../map/store";
 
 /*
@@ -54,6 +55,7 @@ function gate(): void {
 
 function open(): void {
   $("lockBtn").hidden = false;
+  initSync();
   // ?edit=<id> reopens a map in the editor (e.g. after a reload).
   const editing = getMap(new URLSearchParams(location.search).get("edit") ?? "");
   if (editing && !editing.builtIn) showEditor($("main"), editing, teacher);

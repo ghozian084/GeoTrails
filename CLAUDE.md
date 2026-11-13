@@ -10,13 +10,13 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
 - Halaman utama (siswa dan Portal Guru) boleh memakai **Firebase (Firestore, Realtime Database, Authentication) khusus untuk fitur kelas**, dengan syarat:
   - Lokasi data `asia-southeast2` (Jakarta). Google Analytics dan pelacak lain tidak diaktifkan.
   - Guru login dengan akun Google. Siswa tidak memasukkan data apa pun: mereka cukup memasukkan kode kelas, dan untuk mode bersama memakai login anonim Firebase (tanpa nama/email).
-  - Firestore (database `geotrails`, Jakarta): hanya kelas, peta, dan foto buatan guru.
+  - Firestore (database `geotrails`, Jakarta): hanya kelas, peta, dan foto buatan guru, termasuk salinan peta guru di akunnya sendiri (`teachers/{uid}/maps/...`, hanya bisa dibaca guru itu).
   - Mode bersama (multiplayer, Realtime Database, Singapura karena Jakarta belum tersedia): hanya untuk kelompok yang bergabung ke kelas. Yang dikirim hanya nama kelompok, warna, posisi dan arah avatar, poin, dan status per pos (hijau/oranye/belum). Lembar kerja, jawaban, dan refleksi tetap lokal. Siswa diberi tahu di layar mulai. Data sesi dihapus guru ("Hapus data sesi") atau otomatis bila tidak diperbarui 24 jam (dibersihkan saat ruang itu dibuka lagi).
   - Tanpa konfigurasi Firebase atau tanpa internet, Peta tetap berjalan penuh secara lokal.
   - Setiap perubahan aturan keamanan (`firebase/firestore.rules`, `firebase/database.rules.json`) harus lolos `npm run test:rules`.
   - localStorage: progres kelompok (`geotrails.v1`), pengaturan guru (`geotrails.guru`), isi pos buatan guru (`geotrails.trail`).
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
-  - Halaman utama memakai kunci sendiri (namanya tetap `peta` agar progres lama tetap terbaca): `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
+  - Halaman utama memakai kunci sendiri (namanya tetap `peta` agar progres lama tetap terbaca): `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.deleted` (peta yang dihapus di perangkat ini dan belum dihapus di akun), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
 - Tidak boleh mengumpulkan data pribadi (UU PDP). Identitas kelompok hanya nama kelompok dan warna avatar. Selain itu yang disimpan hanya isi pelajaran: jawaban, lembar kerja, hasil ukur fisik, refleksi, foto objek, dan isi pos. Setiap kotak teks bebas untuk siswa wajib memuat pengingat "Jangan menulis data pribadi." Tidak ada analytics atau pelacak.
 - Aplikasi harus tetap berjalan offline setelah dibuka sekali. Jangan memakai CDN saat runtime. Font dan aset di-bundle. SDK Firebase di-bundle dari npm dan hanya dimuat saat fitur kelas dipakai. Satu-satunya pengecualian: popup login Google guru di Portal Guru memuat skrip dari Google.
 - **Jangan mengubah angka kunci jawaban di `src/data/posts.ts`** tanpa izin eksplisit. Setiap perubahan pada data pos harus lolos `npm test`. Isi pos yang diubah guru lewat Mode guru disimpan terpisah di localStorage dan tidak menyentuh `posts.ts`.
@@ -48,8 +48,8 @@ src/
   render3d/   three.js: world3d + game3d + move3d (peta buatan guru), avatar3d, movement, textures
   ui/         layar mulai (pilihan RPG 2D / Blox 3D), modal pos, HUD, log, selesai, mode bersama (live),
               kalkulator, panorama, foto, kontrol sentuh (touch, stick), dom
-  portal/     Portal Guru: daftar peta, editor grid, isi pos, kelas online, pantauan langsung (monitor)
-  cloud/      Firebase: config, cache (offline), client (kelas & peta), live + livedata (mode bersama)
+  portal/     Portal Guru: daftar peta, editor grid, isi pos, kelas online, pantauan langsung (monitor), sinkron akun (sync)
+  cloud/      Firebase: config, cache (offline), client (kelas & peta), mymaps (peta guru di akunnya), live + livedata (mode bersama)
   klasik/     hanya versi klasik: state, ui/ (start, hud, post, log, finish), teacher/ (Mode guru), world3d, game3d
   styles/     base.css (token & komponen), peta.css, portal.css, blox.css
 firebase/     firestore.rules, database.rules.json + tes aturannya (emulator)
@@ -84,6 +84,7 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - Satu peta = JSON (`MapDef`): petak (rumput, paving, lapangan, paving teduh, taman, kolam), gedung (nama, warna, lantai), objek (pohon, tiang bendera, tandon, pot, ramp, papan), titik mulai, dan 1–12 pos dengan isi dan kunci jawaban masing-masing. Pos 0 tetap pos pembuka (gerbang, petunjuk gratis).
 - Siswa hanya melihat peta yang ditampilkan guru dan lolos pemeriksaan (`src/map/validate.ts`): ukuran 12–60 × 10–40, gedung tidak bertumpuk, titik mulai bisa dilalui, setiap pos bisa dicapai dari titik mulai, isi pos sesuai aturan yang sama dengan Mode guru.
 - Tampilan 3D (`/3d`) selalu dibangun dari data peta yang sama dengan 2D, dan progres kelompok sama untuk keduanya.
+- Peta guru tersimpan di akun Google guru: begitu guru masuk di Portal Guru, peta di perangkat itu dan di akunnya disinkronkan (salinan yang terakhir diubah menang, `updatedAt`; foto hanya dikirim bila berubah). Peta yang dihapus ditandai `deleted` agar perangkat lain ikut menghapusnya. Kode: `src/cloud/mymaps.ts` (sinkron) dan `src/portal/sync.ts` (kapan sinkron dan baris status di daftar peta).
 - Kelas online: guru membuat kelas (kode 6 karakter) dan menerbitkan peta beserta fotonya; siswa memasukkan kode kelas untuk memuat peta itu. Peta kelas disimpan di laptop siswa agar tetap bisa dipakai offline. Model data: `classes/{kode}`, `classes/{kode}/maps/{idPeta}`, `.../photos/{uidPos}`.
 - Mode bersama (multiplayer realtime): kelompok di kelas yang sama dan peta yang sama saling melihat avatar (2D dan 3D) dan papan skor langsung (tombol "Kelas"). Guru memantau dari Portal Guru ("Pantau langsung": peta mini dengan posisi kelompok dan papan skor) dan bisa menghapus data sesi. Model data Realtime Database: `live/{kode}/owner` (uid guru), `live/{kode}/rooms/{idPeta}/{uid}` (satu kelompok, hanya ditulis kelompok itu sendiri).
 
@@ -111,5 +112,5 @@ prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 - `npm run typecheck`: pemeriksaan TypeScript (aplikasi dan e2e)
 - `npm run build` / `npm run build:single`
 - `npm run test:rules`: tes aturan keamanan Firestore dan Realtime Database (menjalankan emulator)
-- `npm run e2e:cloud`: tes kelas online Peta di emulator (guru menerbitkan, siswa memuat, mode bersama)
+- `npm run e2e:cloud`: tes fitur online di emulator (peta guru di akun, guru menerbitkan, siswa memuat, mode bersama)
 - `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes 3D (Blox dan Peta 3D) berjalan di proyek `blox` dengan WebGL perangkat lunak.

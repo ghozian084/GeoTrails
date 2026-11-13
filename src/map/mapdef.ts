@@ -60,6 +60,8 @@ export interface MapDef {
   published: boolean;
   /** The built-in Basic map (read-only; duplicate it to edit). */
   builtIn?: boolean;
+  /** Last change (ms), set when the map is saved; decides which copy wins when syncing with the teacher's account. */
+  updatedAt?: number;
 }
 
 export const BUILDING_COLORS = ["#C4281C", "#0D69AC", "#789082", "#DA8541", "#F5CD30", "#635F62", "#694028", "#4B974B"];
