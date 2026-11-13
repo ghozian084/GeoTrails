@@ -7,7 +7,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 - [ ] **Hasil kelompok terkirim ke guru**: poin, status per pos, jumlah percobaan/petunjuk; rekap kelas otomatis dan unduh CSV.
 - [ ] **QR code untuk trail fisik**: kartu QR per pos untuk ditempel di objek nyata; siswa memindai di lapangan dan mengisi hasil ukur fisik.
 - [ ] **Bahasa Inggris**: tombol ID/EN untuk antarmuka dan soal dua bahasa.
-- [ ] **Tes otomatis di GitHub** di setiap PR.
+- [x] **Tes otomatis di GitHub** di setiap PR (CI), plus pemasangan aturan Firebase otomatis.
 
 ## Jelajah berbentuk peta (ala MathCityMap)
 - [ ] **Layar Jelajah berupa peta dunia sungguhan** dengan pin trail di lokasi nyata. Pin dibuka → kartu trail (nama, tempat, jumlah pos, denah mini) → **Main RPG 2D** atau **Main Blox 3D**.

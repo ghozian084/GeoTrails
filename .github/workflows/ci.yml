@@ -1,0 +1,56 @@
+# Runs on every pull request and every push to main: the same checks a contributor runs
+# locally (see CLAUDE.md, "Perintah"). A pull request that would break the site fails here.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same pull request supersedes the older run. Never cancels a run on main.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Typecheck, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The Firebase emulators (rules tests, cloud e2e) are Java programs.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (incl. the answer-key table)
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Security rules tests (Firestore + Realtime Database, emulator)
+        run: npm run test:rules
+
+      - name: Install the Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests (students, teacher portal, 2D and 3D)
+        run: npm run e2e
+
+      - name: Online features end-to-end (emulator)
+        run: npm run e2e:cloud

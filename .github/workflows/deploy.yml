@@ -1,0 +1,69 @@
+# Deploys what Vercel does not: the Firestore rules (database "geotrails") and the Realtime
+# Database rules (instance "geotrails-live"). Vercel already publishes the website on every
+# push to main. Only runs when the rules or the Firebase config change.
+name: Deploy Firebase rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firebase/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - '.github/workflows/deploy.yml'
+  # Deploy by hand from the Actions tab (re-run a failed deploy, or undo a change made in the console).
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-rules
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Test, then deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Check the deploy credentials are set
+        run: |
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT is not set. Add it under Settings -> Secrets and variables -> Actions (see README, 'Pemasangan aturan otomatis')."
+            exit 1
+          fi
+
+      - name: Install
+        run: npm ci
+
+      # Nothing is deployed unless the rules pass their tests: a wrong rule exposes data.
+      - name: Security rules tests
+        run: npm run test:rules
+
+      - name: Write the service account key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$KEY" > "$RUNNER_TEMP/firebase-key.json"
+
+      - name: Deploy rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-key.json
+        # "firestore,database", not "firestore:rules": with a named Firestore database the CLI
+        # would read the word after the colon as a database id and deploy nothing.
+        # firebase.json lists only GeoTrails' own database and instance, so the other apps
+        # in this project are never touched.
+        run: npx firebase deploy --only firestore,database --project gen-lang-client-0151740306 --non-interactive
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-key.json"

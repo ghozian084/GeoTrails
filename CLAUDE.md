@@ -13,7 +13,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
   - Firestore (database `geotrails`, Jakarta): hanya kelas, peta, dan foto buatan guru, termasuk salinan peta guru di akunnya sendiri (`teachers/{uid}/maps/...`, hanya bisa dibaca guru itu) dan peta publik (`public/...`).
   - Mode bersama (multiplayer, Realtime Database, Singapura karena Jakarta belum tersedia): hanya untuk kelompok yang bergabung ke kelas. Yang dikirim hanya nama kelompok, warna, posisi dan arah avatar, poin, dan status per pos (hijau/oranye/belum). Lembar kerja, jawaban, dan refleksi tetap lokal. Siswa diberi tahu di layar mulai. Data sesi dihapus guru ("Hapus data sesi") atau otomatis bila tidak diperbarui 24 jam (dibersihkan saat ruang itu dibuka lagi).
   - Tanpa konfigurasi Firebase atau tanpa internet, Peta tetap berjalan penuh secara lokal.
-  - Setiap perubahan aturan keamanan (`firebase/firestore.rules`, `firebase/database.rules.json`) harus lolos `npm run test:rules`.
+  - Setiap perubahan aturan keamanan (`firebase/firestore.rules`, `firebase/database.rules.json`) harus lolos `npm run test:rules`. Aturan dipasang otomatis oleh GitHub Actions (`.github/workflows/deploy.yml`, kunci `FIREBASE_SERVICE_ACCOUNT`) setelah masuk `main`; jangan memasangnya manual lewat konsol.
   - localStorage: progres kelompok (`geotrails.v1`), pengaturan guru (`geotrails.guru`), isi pos buatan guru (`geotrails.trail`).
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
   - Halaman utama memakai kunci sendiri (namanya tetap `peta` agar progres lama tetap terbaca): `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.deleted` (peta yang dihapus di perangkat ini dan belum dihapus di akun), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), `geotrails.peta.publicmaps` (peta publik yang dipilih siswa, untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
@@ -118,4 +118,5 @@ WISHLIST.md   ide fitur berikutnya (dicentang bila selesai); perintah /wishlist 
 - `npm run build` / `npm run build:single`
 - `npm run test:rules`: tes aturan keamanan Firestore dan Realtime Database (menjalankan emulator)
 - `npm run e2e:cloud`: tes fitur online di emulator (peta guru di akun, peta publik dan persetujuan admin, guru menerbitkan, siswa memuat, mode bersama)
+- CI (`.github/workflows/ci.yml`) menjalankan semua perintah di atas pada setiap pull request; PR baru digabung bila CI hijau.
 - `npm run e2e`: Playwright. Di laptop baru jalankan dulu `npx playwright install chromium`. Tes 3D (Blox dan Peta 3D) berjalan di proyek `blox` dengan WebGL perangkat lunak.
