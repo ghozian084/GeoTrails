@@ -11,6 +11,7 @@ import { classSection } from "./classes";
 import { exportMap, parseMap } from "./io";
 import { onListShown } from "./sync";
 import { mountSharing } from "./sharing";
+import { showPrint } from "./print";
 
 /* Portal home: every map with its status and actions. */
 
@@ -53,6 +54,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
           ${m.builtIn ? "" : `<button class="btn primary" data-act="edit">Edit</button>`}
           <button class="btn" data-act="copy">${m.builtIn ? "Duplikat untuk diedit" : "Duplikat"}</button>
           ${m.builtIn ? "" : `<button class="btn" data-act="pub" ${problems.length && !m.published ? "disabled" : ""}>${m.published ? "Sembunyikan" : "Tampilkan"}</button>`}
+          <button class="btn ghost" data-act="print">Cetak lembar kerja</button>
           <button class="btn ghost" data-act="export">Ekspor</button>
           ${m.builtIn ? "" : `<button class="btn ghost" data-act="delete">Hapus</button>`}
         </div>
@@ -112,6 +114,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
       saveMap({ ...m, published: !m.published });
       showList(el, teacher);
     } else if (act === "export") exportMap(m);
+    else if (act === "print") void showPrint(m);
     else if (act === "delete") {
       if (b.dataset.armed !== "1") {
         b.dataset.armed = "1"; b.textContent = "Yakin? Klik lagi"; b.classList.add("tape");

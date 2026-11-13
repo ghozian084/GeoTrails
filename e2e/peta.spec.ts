@@ -133,3 +133,34 @@ test("versi klasik tetap bisa dibuka dari layar mulai, juga tanpa garis miring d
   await page.goto("/klasik");
   await expect(page).toHaveURL(`${baseURL}/klasik/`);
 });
+
+test("guru mencetak lembar kerja (PDF) dari portal, kunci jawaban hanya bila diminta", async ({ page }) => {
+  await page.addInitScript(() => { (window as unknown as { printed: number }).printed = 0; window.print = () => { (window as unknown as { printed: number }).printed++; }; });
+  await page.goto("/guru");
+  await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
+  await page.click("#pinForm button[type=submit]");
+  await page.locator(".portal-card", { hasText: "Basic" }).getByRole("button", { name: "Cetak lembar kerja" }).click();
+  const sheet = page.locator("#printSheet");
+  await expect(sheet.locator(".ps-post")).toHaveCount(6);
+  await expect(sheet.locator(".ps-map img")).toBeVisible();
+  await expect(sheet).toContainText("Pos 0");
+  await expect(sheet).toContainText("Tiang Bendera");
+  await expect(sheet).toContainText("Jangan menulis data pribadi.");
+  await expect(sheet.locator(".ps-key")).toHaveCount(0);
+  await expect(sheet).not.toContainText("12,6 m");
+
+  await page.check("#printKey");
+  await expect(sheet.locator(".ps-key")).toHaveCount(6);
+  await expect(sheet.locator(".ps-key").first()).toContainText("Hijau 12,3–12,9 m");
+
+  await page.click("#printGo");
+  await expect.poll(() => page.evaluate(() => (window as unknown as { printed: number }).printed)).toBe(1);
+  // On paper only the sheet is printed.
+  await page.emulateMedia({ media: "print" });
+  await expect(page.locator(".print-bar")).toBeHidden();
+  await expect(page.locator(".portal-grid")).toBeHidden();
+  await expect(sheet).toBeVisible();
+  await page.emulateMedia({ media: "screen" });
+  await page.click("#printClose");
+  await expect(page.locator("#printOv")).toHaveCount(0);
+});

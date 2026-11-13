@@ -136,3 +136,45 @@ body.portal{overflow:auto}
 .mon-posts-ctl>span{color:var(--muted);font-size:14px}
 .mon-chip{padding:3px 10px;font-size:13px}
 .mon-live{display:grid;gap:12px}
+
+/* Printable worksheet: preview on screen, only the sheet on paper */
+.print-ov{position:fixed;inset:0;z-index:50;overflow:auto;background:var(--bg);padding:0 0 32px}
+.print-bar{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.print-bar small{color:var(--muted);flex-basis:100%}
+.print-sheet{width:min(190mm,calc(100% - 32px));margin:16px auto;background:#fff;color:#15302A;padding:12mm;box-shadow:0 4px 18px rgba(0,0,0,.15);
+  font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:11pt;line-height:1.4}
+.ps-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;border-bottom:2px solid #0E6B5B;padding-bottom:6px;margin-bottom:10px}
+.ps-head h1{font-family:"Chakra Petch",sans-serif;margin:0;font-size:18pt;color:#0E6B5B}
+.ps-head p{margin:2px 0 0}
+.ps-group{display:grid;gap:2px;min-width:70mm}
+.ps-group small{color:#566C65;font-size:8pt}
+.ps-line{display:inline-block;min-width:45mm;border-bottom:1px solid #15302A;height:1.1em;vertical-align:bottom}
+.ps-map{margin:0 0 10px;text-align:center}
+.ps-map img{max-width:100%;max-height:95mm;border:1px solid #C9D6CE}
+.ps-map figcaption{font-size:9pt;color:#566C65}
+.ps-post{border:1px solid #C9D6CE;border-radius:6px;padding:8px 10px;margin:0 0 10px;break-inside:avoid;page-break-inside:avoid}
+.ps-post header{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:6px}
+.ps-no{background:#F2B705;color:#2A2200;font-family:"JetBrains Mono",monospace;font-weight:700;padding:1px 6px;border-radius:4px}
+.ps-post header b{font-size:12pt}
+.ps-post header small{color:#566C65}
+.ps-body{display:flex;gap:10px;align-items:flex-start}
+.ps-photo{width:62mm;max-height:46mm;object-fit:cover;border-radius:4px;flex:none}
+.ps-scene svg{width:100%;height:auto;max-height:46mm}
+.ps-text{flex:1}
+.ps-task{margin:0 0 4px}
+.ps-note{margin:0 0 4px;color:#566C65;font-size:9.5pt}
+.ps-table{width:100%;border-collapse:collapse;margin:6px 0;font-size:9.5pt}
+.ps-table th,.ps-table td{border:1px solid #93A39C;padding:3px 6px;text-align:left;height:7mm}
+.ps-table th{background:#EAF0EA;height:auto}
+.ps-work{border:1px dashed #93A39C;border-radius:4px;height:38mm;padding:3px 6px;font-size:9pt;color:#566C65}
+.ps-answer{margin:6px 0 0}
+.ps-key{margin-top:6px;padding:5px 8px;border-left:3px solid #0E6B5B;background:#EAF0EA;display:grid;gap:2px;font-size:9.5pt}
+body.printing{overflow:hidden}
+@page{size:A4;margin:12mm}
+@media print{
+  body.printing>*:not(#printOv){display:none !important}
+  body.printing{overflow:visible;background:#fff}
+  .print-ov{position:static;overflow:visible;background:#fff;padding:0}
+  .print-bar{display:none}
+  .print-sheet{width:auto;margin:0;padding:0;box-shadow:none}
+}
