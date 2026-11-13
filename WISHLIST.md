@@ -9,6 +9,17 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 - [ ] **Bahasa Inggris**: tombol ID/EN untuk antarmuka dan soal dua bahasa.
 - [ ] **Tes otomatis di GitHub** di setiap PR.
 
+## Jelajah berbentuk peta (ala MathCityMap)
+- [ ] **Layar Jelajah berupa peta dunia sungguhan** dengan pin trail di lokasi nyata. Pin dibuka → kartu trail (nama, tempat, jumlah pos, denah mini) → **Main RPG 2D** atau **Main Blox 3D**.
+  - Pin hijau = publik, kuning = kelas yang diikuti, abu-abu = tersimpan di perangkat; peta Basic jadi pin pertama di Semesta BBS Semarang.
+  - Daftar biasa tetap ada di bawah peta sebagai cadangan (HP lambat, offline).
+  - Sumber peta (perlu diputuskan): A. OpenStreetMap saat online, daftar saat offline (disarankan; perlu pengecualian aturan "tanpa CDN" khusus layar Jelajah dan atribusi OSM), B. peta sederhana bawaan (offline penuh, kurang detail), C. peta berbayar/berkunci.
+  - Privasi: pin hanya di tempat umum (sekolah, taman); lokasi siswa untuk "Dekat saya" tidak disimpan dan tidak dikirim.
+  - Tahapan:
+    - [ ] 1. Data lokasi peta (lat, lng, nama tempat), isian pin di editor, aturan keamanan untuk kolom baru.
+    - [ ] 2. Layar Jelajah: peta + pin + kartu trail; "Jelajahi peta publik" dan daftar peta pindah ke sini.
+    - [ ] 3. Tombol "Dekat saya", lalu titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
+
 ## Dunia bersama ala Roblox
 - [ ] **Server dunia terbuka**: siswa dari kelas dan sekolah mana pun masuk ke dunia 3D yang sama dan saling berinteraksi secara realtime, tidak hanya melihat avatar.
   - Bergerak bersama dan bertabrakan (tidak saling tembus), animasi lompat terlihat oleh semua.
