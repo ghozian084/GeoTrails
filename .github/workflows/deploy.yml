@@ -9,6 +9,7 @@ on:
     paths:
       - 'firebase/**'
       - 'firebase.json'
+      - 'scripts/deploy-rtdb-rules.mjs'
       - '.firebaserc'
       - '.github/workflows/deploy.yml'
   # Deploy by hand from the Actions tab (re-run a failed deploy, or undo a change made in the console).
@@ -58,11 +59,14 @@ jobs:
       - name: Deploy rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-key.json
-        # "firestore,database", not "firestore:rules": with a named Firestore database the CLI
-        # would read the word after the colon as a database id and deploy nothing.
-        # firebase.json lists only GeoTrails' own database and instance, so the other apps
-        # in this project are never touched.
-        run: npx firebase deploy --only firestore,database --project gen-lang-client-0151740306 --non-interactive
+        # "firestore", not "firestore:rules": with a named Firestore database the CLI would read
+        # the word after the colon as a database id and deploy nothing. The Realtime Database
+        # rules go through scripts/deploy-rtdb-rules.mjs, because the CLI refuses to deploy them
+        # in a project without a default instance. firebase.json lists only GeoTrails' own
+        # database and instance, so the other apps in this project are never touched.
+        run: |
+          npx firebase deploy --only firestore --project gen-lang-client-0151740306 --non-interactive
+          node scripts/deploy-rtdb-rules.mjs
 
       - name: Remove the key
         if: always()
