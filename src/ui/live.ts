@@ -6,6 +6,8 @@ import { deduped, doneCount, postString, ranked, round2, type LivePlayer } from 
 import type { MapDef } from "../map/mapdef";
 import type { MapGame, Remote } from "../map/remote";
 import { app, total } from "../map/session";
+import { control, countdown, serverNow, setControl, waiting, type Control } from "../map/control";
+import { updateHud } from "./hud";
 
 /*
  * Multiplayer for groups that joined a class: other groups walk on the same map and a
@@ -58,7 +60,7 @@ export function startLive(map: MapDef, game: MapGame): void {
   void (async () => {
     try {
       const live = await loadLive();
-      room = await live.joinRoom(code, map.id, state(game), (ps) => { players = ps; renderPanel(); });
+      room = await live.joinRoom(code, map.id, state(game), (ps) => { players = ps; renderPanel(); }, onControl);
       myUid = room.uid;
       btn.classList.add("on"); btn.title = "Kelompok lain di kelas yang sama";
       const r = room;
@@ -71,4 +73,46 @@ export function startLive(map: MapDef, game: MapGame): void {
       btn.title = "Mode bersama tidak tersambung (offline?). Permainan tetap berjalan.";
     }
   })();
+}
+
+/* ---------- the teacher's controls ---------- */
+
+let lastMsg = 0, ticker = 0;
+
+function stageBox(id: string, cls: string): HTMLElement {
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = id; el.className = cls; el.hidden = true;
+    $("stage").appendChild(el);
+  }
+  return el;
+}
+
+function onControl(c: Control): void {
+  setControl(c);
+  updateHud();
+  // A message from the teacher: shown once, if it is recent (sent in the last 10 minutes).
+  if (c.msg && c.msg.at > lastMsg && serverNow() - c.msg.at < 600_000) {
+    lastMsg = c.msg.at;
+    const box = stageBox("liveMsg", "live-msg");
+    box.innerHTML = `<b>Pesan guru</b><span>${esc(c.msg.t)}</span><button class="btn ghost" aria-label="Tutup pesan">×</button>`;
+    box.hidden = false;
+    box.querySelector("button")!.onclick = () => (box.hidden = true);
+  }
+  renderWait();
+  clearInterval(ticker);
+  if (waiting(c, serverNow())) ticker = window.setInterval(renderWait, 200);
+}
+
+/** "Tunggu aba-aba guru" while held, then a countdown to the synchronised start. */
+function renderWait(): void {
+  const box = stageBox("liveWait", "live-wait");
+  const ctrl = control();
+  const now = serverNow(), left = countdown(ctrl, now);
+  if (ctrl.hold) { box.innerHTML = `<b>Tunggu aba-aba guru</b><span>Kalian akan mulai bersama kelompok lain.</span>`; box.hidden = false; return; }
+  if (left > 0) { box.innerHTML = `<b class="live-count">${left}</b><span>Bersiap…</span>`; box.hidden = false; return; }
+  if (!box.hidden && ctrl.startAt && now - ctrl.startAt < 1500) { box.innerHTML = `<b class="live-count">Mulai!</b>`; return; }
+  box.hidden = true;
+  if (!waiting(ctrl, now)) clearInterval(ticker);
 }

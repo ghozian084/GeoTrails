@@ -69,3 +69,59 @@ test("dua kelompok bermain bersama, guru memantau lalu menghapus data sesi", asy
   await clear.click(); await mon.getByRole("button", { name: "Yakin? Klik lagi" }).click();
   await expect(cls.locator("[data-live]")).toContainText("Belum ada kelompok yang bermain", { timeout: 10_000 });
 });
+
+test("guru mengendalikan kelas: tahan, mulai serentak, kirim pesan, kunci dan buka pos", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const t = await (await browser.newContext()).newPage();
+  await t.goto("/guru");
+  await t.fill("#pin1", "2468"); await t.fill("#pin2", "2468");
+  await t.click("#pinForm button[type=submit]");
+  await signIn(t, "guru-kendali", "Bu Dewi");
+  await expect(t.locator("#classBox")).toContainText("Masuk sebagai Bu Dewi");
+  await t.fill("#clsName", "9B Matematika");
+  await t.click("#clsNew button[type=submit]");
+  const cls = t.locator(".cls", { hasText: "9B Matematika" });
+  const code = (await cls.locator(".cls-code").textContent())!;
+  await cls.getByRole("button", { name: "Pantau langsung" }).click();
+  const ctrl = cls.locator(".mon-ctrl");
+  await expect(ctrl).toBeVisible({ timeout: 15_000 });
+
+  const s = await student(browser, code, "Kelompok Garuda");
+  await s.click("#help").catch(() => undefined);
+
+  // Hold: the student waits and cannot walk.
+  await ctrl.getByRole("button", { name: "Tahan semua kelompok" }).click();
+  await expect(s.locator("#liveWait")).toContainText("Tunggu aba-aba guru", { timeout: 10_000 });
+  // Walking towards Pos 0 for a few seconds does nothing while held.
+  await s.keyboard.down("ArrowUp"); await s.waitForTimeout(3000); await s.keyboard.up("ArrowUp");
+  await expect(s.locator("#prompt")).toBeHidden();
+
+  // Synchronised start: a countdown, then everyone can walk.
+  await ctrl.getByRole("button", { name: "Mulai serentak" }).click();
+  await expect(s.locator("#liveWait .live-count")).toBeVisible({ timeout: 10_000 });
+  await expect(s.locator("#liveWait")).toBeHidden({ timeout: 10_000 });
+
+  // A message to every group.
+  await ctrl.getByRole("textbox").fill("Kumpul di tiang bendera");
+  await ctrl.getByRole("button", { name: "Kirim pesan" }).click();
+  await expect(s.locator("#liveMsg")).toContainText("Kumpul di tiang bendera", { timeout: 10_000 });
+
+  // Lock Pos 0: the student cannot open it.
+  await ctrl.getByRole("button", { name: "Pos 0", exact: true }).click();
+  await expect(ctrl.getByRole("button", { name: "Pos 0", exact: true })).toHaveAttribute("aria-pressed", "true", { timeout: 10_000 });
+  await expect(s.locator("#dots span").first()).toHaveClass(/locked/, { timeout: 10_000 });
+  await s.keyboard.down("ArrowUp");
+  await expect(s.locator("#promptTitle")).toHaveText("Tiang Bendera", { timeout: 15_000 });
+  await s.keyboard.up("ArrowUp");
+  await s.keyboard.press("e");
+  await expect(s.locator("#toast")).toHaveText("Pos 0 sedang dikunci guru.");
+  await expect(s.locator("#postOv")).toBeHidden();
+
+  // Unlock it, and open every post without finishing Pos 0 first.
+  await ctrl.getByRole("button", { name: "Pos 0", exact: true }).click();
+  await expect(s.locator("#dots span").first()).not.toHaveClass(/locked/, { timeout: 10_000 });
+  await expect(s.locator("#dots span").nth(1)).not.toHaveClass(/open/);
+  await ctrl.getByRole("button", { name: "Buka semua pos" }).click();
+  await expect(s.locator("#dots span").nth(1)).toHaveClass(/open/, { timeout: 10_000 });
+  await expect(ctrl.getByRole("button", { name: "Kembalikan urutan (Pos 0 dulu)" })).toBeVisible();
+});

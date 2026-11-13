@@ -31,7 +31,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 
 ## Untuk guru
 - [ ] Denah sekolah (foto) sebagai latar di editor grid untuk dijiplak.
-- [ ] Kendali kelas langsung: mulai serentak, kirim pesan/petunjuk ke semua kelompok, buka/kunci pos, hentikan sesi.
+- [x] Kendali kelas langsung: tahan dan mulai serentak, kirim pesan ke semua kelompok, buka/kunci pos (hentikan sesi = "Hapus data sesi").
 - [ ] Analisis kesalahan: pos yang paling sering salah dan kesalahan umum yang paling sering muncul.
 - [ ] Bank soal: salin pos antar peta atau dari peta publik.
 - [ ] Cetak lembar kerja (PDF) untuk trail fisik.

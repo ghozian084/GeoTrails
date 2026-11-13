@@ -10,6 +10,7 @@ import { $, esc, fmt, toast } from "./dom";
 import { mountPano } from "./panorama";
 import { SCENES } from "./scenes";
 import { photoFor } from "../map/photos";
+import { control } from "../map/control";
 import { app, isGateDone, map, persist, S } from "../map/session";
 import { maybeFinish } from "./finish";
 import { updateHud } from "./hud";
@@ -31,6 +32,7 @@ let cur: number | null = null, openedAt = 0;
 let lastFb: { id: number; zone: Zone; title: string; msg: string } | null = null;
 
 export function openPost(id: number): void {
+  if (control().locked.has(id)) { toast(`Pos ${id} sedang dikunci guru.`); return; }
   if (id > 0 && !isGateDone()) { toast(`Selesaikan Pos 0 (${app.posts[0].title}) dulu`); return; }
   game.stop(); cur = id; openedAt = Date.now(); renderPost(); $("postOv").hidden = false;
   setTimeout(() => { const i = $<HTMLInputElement>("ans"); if (i && !i.disabled) i.focus(); }, 50);
