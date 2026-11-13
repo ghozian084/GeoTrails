@@ -53,3 +53,37 @@ test("peta guru tersimpan di akun: dibuat di satu laptop, muncul, diubah, dan di
   await expect(b.locator("#syncLine")).toContainText("Peta tersimpan online", { timeout: 20_000 });
   await expect(card(b, "Taman Kota")).toHaveCount(0, { timeout: 20_000 });
 });
+
+test("lupa PIN: guru yang dikenal membuat PIN baru lewat Google; akun asing ditolak", async ({ browser }) => {
+  test.setTimeout(120_000);
+  // A known teacher: has a map in their account.
+  const ctx = await browser.newContext();
+  const t = await ctx.newPage();
+  await teacherPortal(t);
+  await t.evaluate((m) => localStorage.setItem("geotrails.peta.maps", JSON.stringify([m])), demoMap());
+  await t.reload();
+  await signIn(t, "guru-lupa", "Bu Citra");
+  await expect(t.locator("#syncLine")).toContainText("Peta tersimpan online", { timeout: 20_000 });
+
+  // New tab, PIN forgotten.
+  const t2 = await ctx.newPage();
+  await t2.goto("/guru");
+  await t2.fill("#pin1", "0000");
+  await t2.click("#pinForm button[type=submit]");
+  await expect(t2.locator("#pinMsg")).toHaveText("PIN salah.");
+  await t2.click("#pinForgot");
+  await expect(t2.locator(".pin-note")).toHaveText("Masuk sebagai Bu Citra. Buat PIN baru untuk perangkat ini.", { timeout: 15_000 });
+  await t2.fill("#pin1", "1357"); await t2.fill("#pin2", "1357");
+  await t2.click("#pinForm button[type=submit]");
+  await expect(t2.locator(".portal-card", { hasText: "Taman Kota" })).toBeVisible();
+
+  // Someone else's laptop with a PIN; an unknown Google account cannot reset it.
+  const o = await (await browser.newContext()).newPage();
+  await teacherPortal(o);
+  const o2 = await o.context().newPage();
+  await o2.goto("/guru");
+  await signIn(o2, "orang-asing", "Siswa Iseng");
+  await o2.click("#pinForgot");
+  await expect(o2.locator("#pinMsg")).toContainText("belum punya kelas atau peta", { timeout: 15_000 });
+  await expect(o2.locator("#pin2")).toHaveCount(0);
+});

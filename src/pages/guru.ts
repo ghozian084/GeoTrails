@@ -10,7 +10,8 @@ import "../styles/portal.css";
 
 import { checkPin, hashPin, validPin } from "../core/pin";
 import { loadTeacher, saveTeacher } from "../core/store";
-import { $ } from "../ui/dom";
+import { cloudEnabled, emulatorHost, loadCloud } from "../cloud/config";
+import { $, esc } from "../ui/dom";
 import { showEditor } from "../portal/editor";
 import { showList } from "../portal/list";
 import { initSync } from "../portal/sync";
@@ -24,18 +25,38 @@ import { getMap } from "../map/store";
 const teacher = loadTeacher();
 $("demoBadge").hidden = !teacher.demo;
 
-function gate(): void {
+function gate(note = ""): void {
   const creating = !teacher.pinHash;
   $("main").innerHTML = `<form class="pin portal-pin" id="pinForm">
       <h1>Portal Guru</h1>
+      ${note ? `<p class="pin-note" role="status">${esc(note)}</p>` : ""}
       <p>${creating ? "Buat PIN guru (4–8 angka). PIN disimpan hanya di laptop ini." : "Masukkan PIN guru."}</p>
       <div class="field"><label for="pin1">PIN</label><input id="pin1" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></div>
       ${creating ? `<div class="field"><label for="pin2">Ulangi PIN</label><input id="pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></div>` : ""}
       <div class="pin-msg" id="pinMsg" aria-live="polite"></div>
       <div class="row"><button class="btn primary" type="submit">${creating ? "Simpan PIN" : "Buka"}</button></div>
       <small>PIN ini sama dengan PIN Mode guru di GeoTrails. PIN hanya menjaga portal dari siswa, bukan pengaman sungguhan.</small>
+      ${!creating && cloudEnabled ? `<div class="pin-forgot"><button type="button" class="btn ghost" id="pinForgot">Lupa PIN? Masuk dengan Google</button>
+        <small>Untuk guru yang sudah punya kelas atau peta tersimpan di akun Google. Setelah masuk, Bapak/Ibu membuat PIN baru untuk perangkat ini.</small></div>` : ""}
     </form>`;
   setTimeout(() => $("pin1").focus(), 30);
+  document.getElementById("pinForgot")?.addEventListener("click", async () => {
+    const msg = $("pinMsg");
+    msg.textContent = "Memeriksa akun…";
+    try {
+      const cloud = await loadCloud(), t = await cloud.currentTeacher();
+      if (!(await cloud.isKnownTeacher(t.uid))) {
+        await cloud.signOutTeacher();
+        msg.textContent = "Akun ini belum punya kelas atau peta di GeoTrails, jadi PIN tidak bisa diganti. Masuk dengan akun guru yang biasa dipakai.";
+        return;
+      }
+      teacher.pinHash = "";
+      saveTeacher(teacher);
+      gate(`Masuk sebagai ${t.name}. Buat PIN baru untuk perangkat ini.`);
+    } catch {
+      msg.textContent = "Masuk dibatalkan atau tidak bisa terhubung ke internet.";
+    }
+  });
   $("pinForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const p1 = $<HTMLInputElement>("pin1").value.trim(), msg = $("pinMsg");
@@ -61,6 +82,9 @@ function open(): void {
   if (editing && !editing.builtIn) showEditor($("main"), editing, teacher);
   else showList($("main"), teacher);
 }
+
+// Automated tests sign in without the Google popup (emulator builds only).
+if (emulatorHost) Object.assign(window, { geotrailsTestSignIn: async (sub: string, name: string) => (await loadCloud()).signInForTests(sub, name) });
 
 $("lockBtn").onclick = () => { sessionStorage.removeItem("geotrails.peta.unlocked"); location.reload(); };
 // Stay unlocked for this browser tab (so returning from the editor does not ask again).
