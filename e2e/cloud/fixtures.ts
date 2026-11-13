@@ -22,8 +22,8 @@ export async function teacherPortal(page: Page) {
 }
 
 /** Emulator-only teacher sign-in (the Google popup cannot run in tests). */
-export const signIn = (p: Page, sub: string, name: string): Promise<void> =>
-  p.evaluate(([s, n]) => (window as unknown as { geotrailsTestSignIn(s: string, n: string): Promise<void> }).geotrailsTestSignIn(s, n), [sub, name]);
+export const signIn = (p: Page, sub: string, name: string): Promise<string> =>
+  p.evaluate(([s, n]) => (window as unknown as { geotrailsTestSignIn(s: string, n: string): Promise<string> }).geotrailsTestSignIn(s, n), [sub, name]);
 
 /** In the editor (map from demoMap): select the post at (10, 5) and upload a photo for it. */
 export async function addPhoto(t: Page): Promise<void> {

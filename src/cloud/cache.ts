@@ -55,3 +55,27 @@ export function classMaps(): MapDef[] {
   const c = code ? cachedClass(code) : null;
   return c ? c.maps.filter((m) => mapProblems(m).length === 0) : [];
 }
+
+/* Public maps a student picked on this device (kept for offline play). */
+const PUBLIC_KEY = "geotrails.peta.publicmaps";
+
+export function publicMaps(): MapDef[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(PUBLIC_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((m) => m && m.format === "geotrails-map" && typeof m.id === "string" && mapProblems(m).length === 0) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function cachePublicMap(m: MapDef): MapDef {
+  const copy: MapDef = { ...m, published: true, builtIn: undefined };
+  const list = publicMaps().filter((x) => x.id !== m.id);
+  list.push(copy);
+  localStorage.setItem(PUBLIC_KEY, JSON.stringify(list));
+  return copy;
+}
+
+export function forgetPublicMap(id: string): void {
+  localStorage.setItem(PUBLIC_KEY, JSON.stringify(publicMaps().filter((m) => m.id !== id)));
+}

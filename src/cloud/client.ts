@@ -1,7 +1,7 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut, type Auth } from "firebase/auth";
 import {
-  collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where,
+  collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, query, serverTimestamp, setDoc, where,
   type Firestore,
 } from "firebase/firestore";
 import type { MapDef } from "../map/mapdef";
@@ -53,14 +53,38 @@ export async function signInTeacher(): Promise<void> {
   await signInWithPopup(auth, new GoogleAuthProvider());
 }
 
+/** The teacher signed in on this device, or a Google sign-in now. */
+export async function currentTeacher(): Promise<Teacher> {
+  init();
+  await auth.authStateReady();
+  if (!auth.currentUser || auth.currentUser.isAnonymous) await signInWithPopup(auth, new GoogleAuthProvider());
+  const u = auth.currentUser!;
+  return { uid: u.uid, name: u.displayName || u.email || "Guru" };
+}
+
+/**
+ * Whether this account is a known GeoTrails teacher: an admin, the owner of a class, or someone
+ * with maps in their account. Used to let a teacher who forgot the local PIN set a new one.
+ */
+export async function isKnownTeacher(uid: string): Promise<boolean> {
+  init();
+  const [admin, classes, maps] = await Promise.all([
+    getDoc(doc(db, "admins", uid)).then((s) => s.exists(), () => false),
+    getDocs(query(collection(db, "classes"), where("ownerUid", "==", uid), limit(1))).then((s) => !s.empty, () => false),
+    getDocs(query(collection(db, "teachers", uid, "maps"), limit(1))).then((s) => !s.empty, () => false),
+  ]);
+  return admin || classes || maps;
+}
+
 /**
  * Emulator-only sign-in for the automated tests: the Google popup needs scripts from
  * apis.google.com, which the test machines cannot reach. Refuses to run against a real project.
  */
-export async function signInForTests(sub: string, name: string): Promise<void> {
+export async function signInForTests(sub: string, name: string): Promise<string> {
   if (!emulatorHost) throw new Error("Hanya untuk emulator.");
   init();
-  await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })));
+  const cred = await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })));
+  return cred.user.uid;
 }
 
 export async function signOutTeacher(): Promise<void> {

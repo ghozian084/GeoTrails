@@ -3,8 +3,8 @@ import { COLORS } from "../core/store";
 import type { GroupState } from "../core/types";
 import type { MapDef } from "../map/mapdef";
 import { minimap } from "../map/minimap";
-import { cachedClass, cacheClass, classMaps, isClassCode, joinedClass, normalizeCode, setJoinedClass } from "../cloud/cache";
-import { cloudEnabled, liveEnabled, loadCloud } from "../cloud/config";
+import { cachedClass, cacheClass, cachePublicMap, classMaps, isClassCode, joinedClass, normalizeCode, publicMaps, setJoinedClass } from "../cloud/cache";
+import { cloudEnabled, liveEnabled, loadCloud, loadPublic } from "../cloud/config";
 import { freshGroup, getMap, loadProgress, saveProgress, studentMaps } from "../map/store";
 import { mapProblems } from "../map/validate";
 
@@ -36,14 +36,14 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
   function renderList() {
     maps = studentMaps();
     if (preview && !maps.some((m) => m.id === preview.id) && mapProblems(preview).length === 0) maps.push(preview);
-    const fromClass = new Set(classMaps().map((m) => m.id)), cls = joinedClass();
+    const fromClass = new Set(classMaps().map((m) => m.id)), fromPublic = new Set(publicMaps().map((m) => m.id)), cls = joinedClass();
     const className = cls ? cachedClass(cls)?.name ?? cls : "";
     list.innerHTML = maps.map((m) => {
       const saved = loadProgress(m);
       const done = saved ? saved.posts.filter((p) => p.result).length : 0;
       return `<button type="button" class="map-card" data-id="${esc(m.id)}">
         <span class="map-thumb"></span>
-        <span class="map-info"><b>${esc(m.name)}</b><small>${m.posts.length} pos · ${m.cols}×${m.rows} petak${fromClass.has(m.id) ? ` · Kelas ${esc(className)}` : ""}</small>
+        <span class="map-info"><b>${esc(m.name)}</b><small>${m.posts.length} pos · ${m.cols}×${m.rows} petak${fromClass.has(m.id) ? ` · Kelas ${esc(className)}` : fromPublic.has(m.id) ? " · Publik" : ""}</small>
         ${saved ? `<small class="map-saved">Lanjutkan: ${esc(saved.name)} · ${done}/${m.posts.length} selesai</small>` : ""}</span>
       </button>`;
     }).join("") || `<p class="sub">Belum ada peta yang ditampilkan. Minta guru menampilkan peta atau memberi kode kelas.</p>`;
@@ -69,6 +69,7 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     if (!b || !chosen || b.dataset.mode === mode) return;
     location.href = `${PAGE[b.dataset.mode as ViewMode]}${location.search}`;
   });
+  if (cloudEnabled) initPublicBox((m) => { renderList(); choose(m); });
   $("pickMap").insertAdjacentHTML("beforeend", `<p class="klasik-link"><a href="klasik/">Versi klasik</a>: denah sekolah asli dengan Mode guru lama.</p>`);
 
   function choose(m: MapDef) {
@@ -144,4 +145,41 @@ function initClassBox(onChange: () => void): void {
   render();
   const code = joinedClass();
   if (code && navigator.onLine) void sync(code, false);
+}
+
+/**
+ * "Jelajahi peta publik": approved public maps, loaded from the internet only when asked.
+ * A chosen map is downloaded with its photos and kept on this device for offline play.
+ */
+function initPublicBox(onPick: (m: MapDef) => void): void {
+  const box = document.createElement("div");
+  box.className = "public-box";
+  box.innerHTML = `<button type="button" class="btn" id="publicOpen">Jelajahi peta publik</button><small id="publicStatus" aria-live="polite"></small><div class="public-list" id="publicList"></div>`;
+  $("mapList").after(box);
+  const status = (t: string) => { $("publicStatus").textContent = t; };
+  $("publicOpen").onclick = async () => {
+    status("Memuat peta publik…");
+    try {
+      const list = await (await loadPublic()).approvedMaps();
+      status(list.length ? "Pilih peta untuk diunduh dan dimainkan." : "Belum ada peta publik.");
+      $("publicList").innerHTML = list.map((p) => `<button type="button" class="map-card public" data-pub="${esc(p.id)}">
+        <span class="map-info"><b>${esc(p.name)}</b><small>${p.posts} pos · ${p.cols}×${p.rows} petak · Publik</small></span></button>`).join("");
+    } catch {
+      status("Tidak bisa memuat peta publik. Periksa internet lalu coba lagi.");
+    }
+  };
+  $("publicList").addEventListener("click", async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>("[data-pub]");
+    if (!b) return;
+    status("Mengunduh peta…");
+    try {
+      const m = await (await loadPublic()).downloadPublic(b.dataset.pub!);
+      if (!m || mapProblems(m).length) { status("Peta ini tidak bisa dipakai."); return; }
+      const saved = cachePublicMap(m);
+      $("publicList").innerHTML = ""; status("");
+      onPick(saved);
+    } catch {
+      status("Gagal mengunduh. Periksa internet lalu coba lagi.");
+    }
+  });
 }
