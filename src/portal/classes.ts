@@ -28,7 +28,7 @@ const errMsg = (e: unknown) => {
 
 /** Same map content as the published copy (ignoring the published flag). */
 const sameAsPublished = (m: MapDef, pm: PublishedMap) => {
-  try { return JSON.stringify({ ...JSON.parse(pm.json), published: m.published }) === JSON.stringify({ ...m, builtIn: undefined }); } catch { return false; }
+  try { return JSON.stringify({ ...JSON.parse(pm.json), published: m.published, updatedAt: undefined }) === JSON.stringify({ ...m, builtIn: undefined, updatedAt: undefined }); } catch { return false; }
 };
 
 export function classSection(el: HTMLElement, rerender: () => void, mapsChanged: () => void): void {

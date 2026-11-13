@@ -32,6 +32,7 @@ Sudah aktif. Konfigurasi web ada di `.env.production` (nilainya memang publik; a
   npx firebase login
   npx firebase deploy --only firestore:rules --project gen-lang-client-0151740306
   ```
+- **Peta guru tersimpan online**: masuk dengan Google di Portal Guru (`/guru`), dan semua peta di perangkat itu tersimpan di akun Bapak/Ibu. Di perangkat lain cukup buka `/guru` dan masuk dengan akun yang sama. Baris di bawah judul "Daftar peta" menunjukkan status sinkronnya.
 - **Mode bersama (multiplayer realtime)** memakai Realtime Database **`geotrails-live`** (asia-southeast1, Singapura; Jakarta belum tersedia untuk layanan ini) dan login anonim untuk siswa. Kelompok yang bergabung ke kelas saling melihat avatar di peta yang sama (2D dan 3D) dan papan skor langsung (tombol **Kelas**). Guru: Portal Guru → kelas → **Pantau langsung**.
   Yang dikirim hanya nama kelompok, warna, posisi, poin, dan status per pos. Data sesi dihapus dengan **Hapus data sesi**, atau otomatis bila tidak aktif 24 jam (dibersihkan saat ruang itu dibuka lagi).
   Login anonim siswa sudah aktif di proyek ini. Aturan Firestore menolak akun anonim untuk membuat kelas atau menerbitkan peta.
@@ -41,6 +42,6 @@ Sudah aktif. Konfigurasi web ada di `.env.production` (nilainya memang publik; a
 Pengembangan dan tes memakai emulator (butuh Java), tidak menyentuh proyek sungguhan:
 ```
 npm run test:rules   # tes aturan keamanan
-npm run e2e:cloud    # guru menerbitkan peta, siswa memuat dengan kode kelas, mode bersama
+npm run e2e:cloud    # peta guru di akun, guru menerbitkan peta, siswa memuat dengan kode kelas, mode bersama
 ```
 

@@ -8,11 +8,15 @@ import { mapProblems } from "./validate";
 /*
  * Storage for the Peta app, under its own keys so the original app's data is untouched:
  * - localStorage "geotrails.peta.maps": teacher-made maps
+ * - localStorage "geotrails.peta.deleted": maps deleted here that the teacher's account must still forget
  * - localStorage "geotrails.peta.progress.<mapId>": a group's progress on one map
  * - IndexedDB "geotrails-peta" / "photos": post photos keyed "<mapId>:<postUid>"
  */
 
-const MAPS_KEY = "geotrails.peta.maps";
+const MAPS_KEY = "geotrails.peta.maps", DELETED_KEY = "geotrails.peta.deleted";
+
+/** Tell the portal (account sync) that teacher maps changed on this device. */
+const changed = (): void => { if (typeof window !== "undefined") window.dispatchEvent(new Event("geotrails:maps")); };
 const progressKey = (id: string) => `geotrails.peta.progress.${id}`;
 
 export function customMaps(): MapDef[] {
@@ -36,17 +40,45 @@ export function studentMaps(): MapDef[] {
   return [...local, ...classMaps().filter((m) => !ids.has(m.id))];
 }
 
-export function saveMap(m: MapDef): void {
+/** Save a teacher map. `touch` marks it as changed now (false for copies coming from the account). */
+export function saveMap(m: MapDef, touch = true): void {
   if (m.id === BASIC_ID) throw new Error("Peta Basic tidak bisa diubah. Duplikat dulu.");
+  if (touch) m.updatedAt = Date.now();
   const list = customMaps();
   const i = list.findIndex((x) => x.id === m.id);
   if (i >= 0) list[i] = m; else list.push(m);
   localStorage.setItem(MAPS_KEY, JSON.stringify(list));
+  if (touch) changed();
 }
 
+/** Delete a map here; it is also removed from the teacher's account at the next sync. */
 export function deleteMap(id: string): void {
+  removeLocalMap(id);
+  const t = tombstones().filter((x) => x.id !== id);
+  t.push({ id, at: Date.now() });
+  localStorage.setItem(DELETED_KEY, JSON.stringify(t));
+  changed();
+}
+
+/** Delete only this device's copy (e.g. the map was deleted on another device). */
+export function removeLocalMap(id: string): void {
   localStorage.setItem(MAPS_KEY, JSON.stringify(customMaps().filter((m) => m.id !== id)));
   clearProgress(id);
+}
+
+export interface Tombstone { id: string; at: number }
+
+export function tombstones(): Tombstone[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(DELETED_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((t) => t && typeof t.id === "string" && typeof t.at === "number") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearTombstone(id: string): void {
+  localStorage.setItem(DELETED_KEY, JSON.stringify(tombstones().filter((t) => t.id !== id)));
 }
 
 export function freshGroup(name: string, color: string, map: MapDef): GroupState {

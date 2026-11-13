@@ -28,3 +28,6 @@ export const loadCloud = () => import("./client");
 export const liveEnabled = cloudEnabled && !!firebaseConfig.databaseURL;
 
 export const loadLive = () => import("./live");
+
+/** The teacher's own maps in their account (Firestore), loaded only in the portal. */
+export const loadMyMaps = () => import("./mymaps");

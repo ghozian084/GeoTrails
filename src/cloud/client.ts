@@ -31,10 +31,10 @@ function init() {
   }
 }
 
-/** Shared app and auth for the other Firebase modules (live rooms). */
-export function firebase(): { app: FirebaseApp; auth: Auth } {
+/** Shared app, auth and Firestore for the other Firebase modules (live rooms, the teacher's own maps). */
+export function firebase(): { app: FirebaseApp; auth: Auth; db: Firestore } {
   init();
-  return { app, auth };
+  return { app, auth, db };
 }
 
 export interface Teacher { uid: string; name: string }
@@ -112,14 +112,14 @@ const toBase64 = (blob: Blob): Promise<string> =>
     r.readAsDataURL(blob);
   });
 
-const fromBase64 = (data: string): Blob => {
+export const fromBase64 = (data: string): Blob => {
   const bin = atob(data), out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return new Blob([out], { type: "image/jpeg" });
 };
 
 /** Re-encode a photo (smaller, lower quality) until it fits in one Firestore document. */
-async function fitPhoto(blob: Blob): Promise<string> {
+export async function fitPhoto(blob: Blob): Promise<string> {
   let data = await toBase64(blob);
   if (data.length <= PHOTO_LIMIT) return data;
   const bmp = await createImageBitmap(blob);

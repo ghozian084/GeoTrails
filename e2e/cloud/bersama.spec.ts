@@ -1,10 +1,8 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { answer } from "../helpers";
+import { signIn } from "./fixtures";
 
 /* Multiplayer: groups in the same class see each other on the map and on a live scoreboard. */
-
-const signIn = (p: Page, sub: string, name: string) =>
-  p.evaluate(([s, n]) => (window as unknown as { geotrailsTestSignIn(s: string, n: string): Promise<void> }).geotrailsTestSignIn(s, n), [sub, name]);
 
 async function student(browser: Browser, code: string, group: string): Promise<Page> {
   const ctx = await browser.newContext();

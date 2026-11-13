@@ -12,6 +12,7 @@ import { mapProblems, MAX_POSTS, SIZE } from "../map/validate";
 import { drawEditor, TILE_COLOR, type EditorView } from "./canvas";
 import { showList } from "./list";
 import { postForm } from "./postform";
+import { setEditing } from "./sync";
 
 /*
  * Grid map editor. Every change is saved automatically to this laptop; undo/redo keep a
@@ -26,6 +27,7 @@ const OBJECT_HELP = "Klik petak untuk menaruh objek; klik lagi untuk menghapusny
 
 export function showEditor(root: HTMLElement, map: MapDef, teacher: TeacherSettings): void {
   const m = map;
+  setEditing(m.id);
   let tool: Tool = { t: "tile", kind: "p" }, brush = 1;
   const view: EditorView = { zoom: 22, hover: null, rect: null, selPost: null, selBuilding: null, movingPost: null };
   const undo: string[] = [], redo: string[] = [];

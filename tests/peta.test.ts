@@ -103,7 +103,7 @@ describe("penyimpanan peta dan progres", () => {
 
   it("hanya peta yang ditampilkan dan valid muncul untuk siswa", () => {
     const shown = { ...tiny(), published: true }, hidden = tiny(), broken = { ...tiny(), published: true, posts: [] };
-    [shown, hidden, broken].forEach(saveMap);
+    [shown, hidden, broken].forEach((m) => saveMap(m));
     expect(studentMaps().map((m) => m.id)).toEqual(["basic", shown.id]);
   });
 
