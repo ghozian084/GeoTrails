@@ -34,7 +34,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 - [x] Kendali kelas langsung: tahan dan mulai serentak, kirim pesan ke semua kelompok, buka/kunci pos (hentikan sesi = "Hapus data sesi").
 - [ ] Analisis kesalahan: pos yang paling sering salah dan kesalahan umum yang paling sering muncul.
 - [ ] Bank soal: salin pos antar peta atau dari peta publik.
-- [ ] Cetak lembar kerja (PDF) untuk trail fisik.
+- [x] Cetak lembar kerja (PDF) untuk trail fisik: denah bernomor, tiap pos dengan foto, tabel hasil ukur, ruang perhitungan; kunci jawaban opsional untuk guru.
 - [x] Peta guru tersimpan online di akun Google.
 - [x] Peta pribadi (lewat kode kelas) atau publik (setelah disetujui admin).
 
