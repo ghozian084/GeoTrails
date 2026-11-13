@@ -13,6 +13,48 @@ service cloud.firestore {
       return teacher() && get(/databases/$(db)/documents/classes/$(code)).data.ownerUid == request.auth.uid;
     }
 
+    // Site admins (the owner): a document per uid, created by hand in the console. Only readable by that admin.
+    function isAdmin() { return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Public maps: anyone can read approved ones. A teacher's submission (or any later change) waits
+    // as "pending" until an admin approves it; an admin's own maps may be approved directly.
+    match /public/{mapId} {
+      function seeable(d) { return d.status == 'approved' || (teacher() && (d.ownerUid == request.auth.uid || isAdmin())); }
+      function valid() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['name', 'json', 'photos', 'ownerUid', 'status', 'updatedAt', 'posts', 'cols', 'rows'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+          && d.json is string && d.json.size() < 900000
+          && d.photos is list && d.photos.size() <= 12
+          && d.ownerUid == request.auth.uid
+          && (d.status == 'pending' || (d.status == 'approved' && isAdmin()))
+          && d.updatedAt is number
+          && d.posts is int && d.posts >= 1 && d.posts <= 12
+          && d.cols is int && d.rows is int;
+      }
+      allow get, list: if seeable(resource.data);
+      allow create: if teacher() && mapId.size() <= 60 && valid();
+      allow update: if teacher() && (
+        (resource.data.ownerUid == request.auth.uid && valid())
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+            && request.resource.data.status in ['pending', 'approved']));
+      allow delete: if teacher() && (resource.data.ownerUid == request.auth.uid || isAdmin());
+
+      match /photos/{postUid} {
+        function parent() { return get(/databases/$(db)/documents/public/$(mapId)).data; }
+        allow read: if seeable(parent());
+        allow create, update: if teacher() && parent().ownerUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['data', 'type'])
+          && request.resource.data.type == 'image/jpeg'
+          && request.resource.data.data is string && request.resource.data.data.size() < 950000;
+        allow delete: if teacher() && (parent().ownerUid == request.auth.uid || isAdmin());
+      }
+    }
+
     // Each teacher's own maps, synced between their devices. Only that teacher can read or write them.
     match /teachers/{uid}/maps/{mapId} {
       function me() { return teacher() && request.auth.uid == uid; }

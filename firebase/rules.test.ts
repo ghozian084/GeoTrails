@@ -144,3 +144,70 @@ describe("peta guru di akun Google", () => {
     await assertFails(a.doc(`${path}/photos/p1`).set(photo({ type: "image/png" })));
   });
 });
+
+describe("peta publik", () => {
+  const pub = (owner: string, extra: Record<string, unknown> = {}) => ({ name: "Taman", json: "{}", photos: ["p1"], ownerUid: owner, status: "pending", updatedAt: Date.now(), posts: 1, cols: 20, rows: 14, ...extra });
+  const admin = () => env.authenticatedContext("admin-1").firestore();
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc("admins/admin-1").set({ note: "pemilik" });
+      await ctx.firestore().doc("public/ok").set(pub("guru-b", { status: "approved" }));
+      await ctx.firestore().doc("public/ok/photos/p1").set(photo());
+      await ctx.firestore().doc("public/tunggu").set(pub("guru-b"));
+      await ctx.firestore().doc("public/tunggu/photos/p1").set(photo());
+    });
+  });
+
+  it("siapa pun membaca peta publik yang sudah disetujui, tetapi tidak yang menunggu", async () => {
+    for (const db of [env.unauthenticatedContext().firestore(), env.authenticatedContext("siswa", { firebase: { sign_in_provider: "anonymous" } }).firestore(), env.authenticatedContext("guru-c").firestore()]) {
+      await assertSucceeds(db.doc("public/ok").get());
+      await assertSucceeds(db.doc("public/ok/photos/p1").get());
+      await assertSucceeds(db.collection("public").where("status", "==", "approved").get());
+      await assertFails(db.doc("public/tunggu").get());
+      await assertFails(db.doc("public/tunggu/photos/p1").get());
+      await assertFails(db.collection("public").get());
+    }
+  });
+
+  it("guru mengajukan peta (menunggu); tidak bisa menyetujui sendiri atau menyamar sebagai guru lain", async () => {
+    const a = env.authenticatedContext("guru-a").firestore();
+    await assertSucceeds(a.doc("public/baru").set(pub("guru-a")));
+    await assertSucceeds(a.doc("public/baru/photos/p1").set(photo()));
+    await assertSucceeds(a.collection("public").where("ownerUid", "==", "guru-a").get());
+    await assertFails(a.doc("public/baru2").set(pub("guru-a", { status: "approved" })));
+    await assertFails(a.doc("public/baru3").set(pub("guru-b")));
+    await assertFails(a.doc("public/ok").set(pub("guru-a"))); // peta guru lain
+    await assertFails(a.doc("public/ok/photos/p2").set(photo()));
+    await assertFails(a.doc("public/ok").delete());
+    await assertFails(env.authenticatedContext("guru-a", { firebase: { sign_in_provider: "anonymous" } }).firestore().doc("public/x").set(pub("guru-a")));
+  });
+
+  it("perubahan oleh pemilik kembali menunggu persetujuan; pemilik bisa menarik petanya", async () => {
+    const b = env.authenticatedContext("guru-b").firestore();
+    await assertFails(b.doc("public/ok").set(pub("guru-b", { status: "approved", name: "Ubah" })));
+    await assertSucceeds(b.doc("public/ok").set(pub("guru-b", { name: "Ubah" })));
+    await assertSucceeds(b.doc("public/tunggu/photos/p1").delete());
+    await assertSucceeds(b.doc("public/tunggu").delete());
+  });
+
+  it("admin melihat yang menunggu, menyetujui atau menolak, dan bisa langsung menerbitkan petanya", async () => {
+    const ad = admin();
+    await assertSucceeds(ad.doc("admins/admin-1").get());
+    await assertFails(env.authenticatedContext("guru-a").firestore().doc("admins/guru-a").set({}));
+    await assertSucceeds(ad.collection("public").where("status", "==", "pending").get());
+    await assertSucceeds(ad.doc("public/tunggu/photos/p1").get());
+    await assertFails(ad.doc("public/tunggu").update({ name: "diubah admin" }));
+    await assertSucceeds(ad.doc("public/tunggu").update({ status: "approved" }));
+    await assertSucceeds(ad.doc("public/ok/photos/p1").delete());
+    await assertSucceeds(ad.doc("public/ok").delete());
+    await assertSucceeds(ad.doc("public/milik-admin").set(pub("admin-1", { status: "approved" })));
+  });
+
+  it("isi dokumen dibatasi", async () => {
+    const a = env.authenticatedContext("guru-a").firestore();
+    await assertFails(a.doc("public/x").set({ ...pub("guru-a"), email: "x@y" }));
+    await assertFails(a.doc("public/x").set(pub("guru-a", { posts: 0 })));
+    await assertFails(a.doc("public/x").set(pub("guru-a", { json: "x".repeat(900001) })));
+    await assertFails(a.doc("public/x").set(pub("guru-a", { name: "" })));
+  });
+});

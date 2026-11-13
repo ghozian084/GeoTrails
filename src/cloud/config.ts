@@ -31,3 +31,6 @@ export const loadLive = () => import("./live");
 
 /** The teacher's own maps in their account (Firestore), loaded only in the portal. */
 export const loadMyMaps = () => import("./mymaps");
+
+/** Public maps (anyone can play approved ones), loaded on demand. */
+export const loadPublic = () => import("./publicmaps");

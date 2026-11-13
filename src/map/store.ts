@@ -1,7 +1,7 @@
 import { normalize } from "../core/store";
 import type { GroupState } from "../core/types";
 import { basicMap, BASIC_ID } from "./basic";
-import { classMaps } from "../cloud/cache";
+import { classMaps, publicMaps } from "../cloud/cache";
 import { walker, type MapDef } from "./mapdef";
 import { mapProblems } from "./validate";
 
@@ -31,13 +31,15 @@ export function customMaps(): MapDef[] {
 /** Basic first, then the teacher's maps. */
 export const allMaps = (): MapDef[] => [basicMap(), ...customMaps()];
 
-export const getMap = (id: string): MapDef | undefined => allMaps().find((m) => m.id === id) ?? classMaps().find((m) => m.id === id);
+export const getMap = (id: string): MapDef | undefined =>
+  allMaps().find((m) => m.id === id) ?? classMaps().find((m) => m.id === id) ?? publicMaps().find((m) => m.id === id);
 
-/** Maps students can choose: published local maps without problems, then the joined class's maps. */
+/** Maps students can choose: published local maps without problems, the joined class's maps, then public maps picked here. */
 export function studentMaps(): MapDef[] {
-  const local = allMaps().filter((m) => m.published && mapProblems(m).length === 0);
-  const ids = new Set(local.map((m) => m.id));
-  return [...local, ...classMaps().filter((m) => !ids.has(m.id))];
+  const out = allMaps().filter((m) => m.published && mapProblems(m).length === 0);
+  const ids = new Set(out.map((m) => m.id));
+  for (const m of [...classMaps(), ...publicMaps()]) if (!ids.has(m.id)) { ids.add(m.id); out.push(m); }
+  return out;
 }
 
 /** Save a teacher map. `touch` marks it as changed now (false for copies coming from the account). */

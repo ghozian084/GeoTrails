@@ -5,10 +5,10 @@ import { grade } from "../src/core/grade";
 import { parseNumber } from "../src/core/parseNumber";
 import { basicMap, copyOfBasic } from "../src/map/basic";
 import { blankMap, blankPost, setTile, toPosts, walker, type MapDef } from "../src/map/mapdef";
-import { align, allMaps, deleteMap, freshGroup, getMap, loadProgress, saveMap, saveProgress, studentMaps } from "../src/map/store";
+import { align, allMaps, clearTombstone, deleteMap, freshGroup, getMap, loadProgress, removeLocalMap, saveMap, saveProgress, studentMaps, tombstones } from "../src/map/store";
 import { mapProblems } from "../src/map/validate";
 import { parseMap } from "../src/portal/io";
-import { cacheClass, cachedClass, classMaps, isClassCode, joinedClass, newClassCode, normalizeCode, setJoinedClass } from "../src/cloud/cache";
+import { cacheClass, cachedClass, cachePublicMap, classMaps, forgetPublicMap, isClassCode, joinedClass, newClassCode, normalizeCode, publicMaps, setJoinedClass } from "../src/cloud/cache";
 
 // Minimal localStorage for the store tests (Vitest runs in Node).
 const mem = new Map<string, string>();
@@ -89,6 +89,36 @@ describe("validasi peta", () => {
 
 describe("penyimpanan peta dan progres", () => {
   beforeEach(() => mem.clear());
+
+  it("simpan menandai waktu ubah; hapus meninggalkan tanda untuk akun guru", () => {
+    const m = tiny();
+    saveMap(m);
+    expect(m.updatedAt).toBeGreaterThan(0);
+    const t = m.updatedAt;
+    saveMap({ ...m, name: "Dari akun", updatedAt: 5 }, false);
+    expect(getMap(m.id)?.updatedAt).toBe(5);
+    expect(t).toBeGreaterThan(5);
+    deleteMap(m.id);
+    expect(getMap(m.id)).toBeUndefined();
+    expect(tombstones().map((x) => x.id)).toEqual([m.id]);
+    clearTombstone(m.id);
+    expect(tombstones()).toEqual([]);
+    const n = tiny(); saveMap(n); removeLocalMap(n.id);
+    expect(tombstones()).toEqual([]); // removing only this device's copy leaves no mark
+  });
+
+  it("peta publik yang dipilih siswa tersimpan untuk offline dan muncul di daftar", () => {
+    const m = { ...tiny(), published: false };
+    cachePublicMap(m);
+    expect(publicMaps().map((x) => x.id)).toEqual([m.id]);
+    expect(studentMaps().map((x) => x.id)).toEqual(["basic", m.id]);
+    expect(getMap(m.id)?.published).toBe(true);
+    cachePublicMap({ ...m, name: "Baru" });
+    expect(publicMaps()).toHaveLength(1);
+    expect(publicMaps()[0].name).toBe("Baru");
+    forgetPublicMap(m.id);
+    expect(publicMaps()).toEqual([]);
+  });
 
   it("Basic selalu pertama; peta guru disimpan, diubah, dihapus", () => {
     const m = tiny();

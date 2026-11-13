@@ -10,6 +10,7 @@ import { showEditor } from "./editor";
 import { classSection } from "./classes";
 import { exportMap, parseMap } from "./io";
 import { onListShown } from "./sync";
+import { mountSharing } from "./sharing";
 
 /* Portal home: every map with its status and actions. */
 
@@ -46,6 +47,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
           <h2>${esc(m.name)}</h2>
           <small>${m.posts.length} pos · ${m.cols}×${m.rows} petak · ${m.buildings.length} gedung</small>
           ${status}
+          ${m.builtIn ? "" : `<div class="share" data-share="${esc(m.id)}"></div>`}
         </div>
         <div class="row">
           ${m.builtIn ? "" : `<button class="btn primary" data-act="edit">Edit</button>`}
@@ -56,6 +58,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
         </div>
       </article>`;
     }).join("")}</div>
+    <section class="portal-settings portal-approve" id="approveBox" hidden></section>
     <section class="portal-settings portal-classes" id="classBox"></section>
     <section class="portal-settings">
       <h2>Pengaturan</h2>
@@ -70,6 +73,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
   const drawClasses = (): void => { if (box.isConnected) classSection(box, drawClasses, () => showList(el, teacher)); };
   drawClasses();
 
+  mountSharing();
   onListShown(() => { if (el.isConnected && el.querySelector(".portal-grid")) showList(el, teacher); });
 
   const form = $<HTMLFormElement>("newForm");

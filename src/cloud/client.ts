@@ -57,10 +57,11 @@ export async function signInTeacher(): Promise<void> {
  * Emulator-only sign-in for the automated tests: the Google popup needs scripts from
  * apis.google.com, which the test machines cannot reach. Refuses to run against a real project.
  */
-export async function signInForTests(sub: string, name: string): Promise<void> {
+export async function signInForTests(sub: string, name: string): Promise<string> {
   if (!emulatorHost) throw new Error("Hanya untuk emulator.");
   init();
-  await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })));
+  const cred = await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub, name, email: `${sub}@example.com`, email_verified: true })));
+  return cred.user.uid;
 }
 
 export async function signOutTeacher(): Promise<void> {
