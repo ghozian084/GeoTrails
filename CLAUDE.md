@@ -58,7 +58,7 @@ tests/        Vitest
 e2e/          Playwright: peta, peta3d (halaman utama), touch + klasik/ (siswa, guru, blox) untuk versi klasik, cloud/ (emulator); helpers.ts
 public/posts/ foto & panorama per pos (pos-<id>.jpg), opsional
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
-WISHLIST.md   ide fitur berikutnya (dicentang bila selesai)
+WISHLIST.md   ide fitur berikutnya (dicentang bila selesai); perintah /wishlist di .claude/commands/wishlist.md
 ```
 
 ## Logika inti (jangan diubah tanpa diskusi)
