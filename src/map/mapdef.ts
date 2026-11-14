@@ -1,5 +1,5 @@
 import type { ErrorPattern, Post } from "../core/types";
-import type { PostFigure } from "./figures";
+import type { PhotoMark, PostFigure } from "./figures";
 
 /*
  * Teacher-made maps for the "Peta" app. A map is plain JSON so it can be stored in
@@ -42,6 +42,8 @@ export interface MapPost {
   scene?: number;
   /** Illustration from a template, with the teacher's labels (shown when there is no photo). */
   figure?: PostFigure;
+  /** Labels the teacher placed on the post's photo (drawn over it for students and on the worksheet). */
+  marks?: PhotoMark[];
   media?: "pano" | "img";
   focus?: number;
 }

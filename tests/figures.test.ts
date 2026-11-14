@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { figureProblems, labelText, newFigure, renderFigure, TEMPLATES } from "../src/map/figures";
+import { figureProblems, labelText, MARK_MAX, markBox, markProblems, marksSvg, newFigure, newMark, renderFigure, TEMPLATES, type PhotoMark } from "../src/map/figures";
 import { blankPost } from "../src/map/mapdef";
 import { postProblems } from "../src/map/validate";
 
@@ -40,5 +40,41 @@ describe("ilustrasi template", () => {
     const p = Object.assign(blankPost(1, 1), { title: "A", task: "B", unit: "m", key: "C", green: [1, 2], orange: [0, 3], hints: ["h"] });
     expect(postProblems(p, "Pos 1")).toEqual([]);
     expect(postProblems({ ...p, figure: { tpl: "roket", labels: [] } }, "Pos 1")).toEqual(["Pos 1: Template ilustrasi tidak dikenal."]);
+  });
+});
+
+describe("label bebas di atas foto", () => {
+  const mk = (extra: Partial<PhotoMark> = {}): PhotoMark => ({ ...newMark(0), name: "Tinggi pagar", value: "2", unit: "m", ...extra });
+
+  it("posisi label mengikuti ukuran foto dan tidak keluar dari foto", () => {
+    const b = markBox(mk({ x: .5, y: .5, ax: .5, ay: .9 }), 800, 600);
+    expect(b.text).toBe("Tinggi pagar: 2 m");
+    expect(b.x).toBe(400); expect(b.y).toBe(300);
+    expect(b.pointer).toBe(true);
+    expect(b.fs).toBeCloseTo(600 * .04);
+    const edge = markBox(mk({ x: 1, y: 1 }), 800, 600);
+    expect(edge.x + edge.w).toBeLessThanOrEqual(800);
+    expect(edge.y + edge.h).toBeLessThanOrEqual(600);
+    // Same proportions on a panorama: the size follows the photo's height.
+    expect(markBox(mk(), 3000, 600).fs).toBe(b.fs);
+  });
+
+  it("titik yang menempel pada kotak tidak diberi garis penunjuk; teks di-escape", () => {
+    const b = markBox(mk({ x: .1, y: .1, ax: .12, ay: .12 }), 800, 600);
+    expect(b.pointer).toBe(false);
+    const svg = marksSvg([mk({ name: "<i>a</i>" })], 800, 600);
+    expect(svg).toContain("&lt;i&gt;a&lt;/i&gt;: 2 m");
+    expect(svg).toContain('data-box="0"');
+    expect(svg).toContain('data-anchor="0"');
+  });
+
+  it("label foto dibatasi jumlah, isi, dan posisinya", () => {
+    expect(markProblems(undefined)).toEqual([]);
+    expect(markProblems([mk()])).toEqual([]);
+    expect(markProblems(Array.from({ length: MARK_MAX + 1 }, () => mk()))).toEqual([`Label foto maksimal ${MARK_MAX}.`]);
+    expect(markProblems([mk({ x: 1.5 })])).toEqual(["Label foto rusak."]);
+    expect(markProblems([mk({ name: "x".repeat(41) })])).toEqual(["Teks label foto terlalu panjang."]);
+    const p = Object.assign(blankPost(1, 1), { title: "A", task: "B", unit: "m", key: "C", green: [1, 2], orange: [0, 3], hints: ["h"], marks: [mk({ ay: -1 })] });
+    expect(postProblems(p, "Pos 1")).toEqual(["Pos 1: Label foto rusak."]);
   });
 });

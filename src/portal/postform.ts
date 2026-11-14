@@ -3,7 +3,7 @@ import { parseNumber } from "../core/parseNumber";
 import { esc } from "../ui/dom";
 import type { MapDef, MapPost } from "../map/mapdef";
 import { photoFor, removeUpload, uploadPhoto } from "../map/photos";
-import { FIG_LIMITS, newFigure, renderFigure, TEMPLATES } from "../map/figures";
+import { FIG_LIMITS, MARK_MAX, marksSvg, newFigure, newMark, renderFigure, TEMPLATES } from "../map/figures";
 
 /*
  * Form for one post's content in the map editor. Edits are written straight into `post`;
@@ -37,12 +37,23 @@ export function postForm(el: HTMLElement, m: MapDef, index: number, act: PostFor
       <button type="button" class="btn ghost" data-a="remove">Hapus pos</button>
     </div>
     <div class="pf-photo">
-      ${photo ? `<img src="${esc(photo.url)}" alt="">` : `<span>${p.figure ? "Belum ada foto: memakai ilustrasi template di bawah" : p.scene != null ? "Memakai ilustrasi bawaan" : "Belum ada foto"}</span>`}
+      ${photo ? `<div class="pf-photo-edit"><img src="${esc(photo.raw)}" alt=""><svg class="pf-marks" data-marks viewBox="0 0 ${photo.w} ${photo.h}" preserveAspectRatio="none">${marksSvg(p.marks ?? [], photo.w, photo.h)}</svg></div>` : `<span>${p.figure ? "Belum ada foto: memakai ilustrasi template di bawah" : p.scene != null ? "Memakai ilustrasi bawaan" : "Belum ada foto"}</span>`}
       <div class="row">
         <label class="btn">Pilih foto<input type="file" accept="image/*" hidden data-photo></label>
         ${photo?.source === "upload" ? `<button type="button" class="btn ghost" data-a="nophoto">Hapus foto</button>` : ""}
       </div>
       <small class="pf-msg" data-msg></small>
+      ${photo ? `<fieldset class="pf-marks-ed"><legend>Label di foto</legend>
+        <small>Tulis ukuran yang terlihat di foto. Seret kotak label untuk memindahkannya, dan seret titik kuning ke bagian yang diukur.</small>
+        ${(p.marks ?? []).map((mk, i) => `<div class="pf-lbl pf-mk">
+          <b>L${i + 1}</b>
+          <input data-mn="${i}" maxlength="${FIG_LIMITS.name}" value="${esc(mk.name)}" placeholder="nama ukuran" aria-label="Nama label foto ${i + 1}">
+          <input data-mv="${i}" maxlength="${FIG_LIMITS.value}" value="${esc(mk.value)}" placeholder="angka" aria-label="Angka label foto ${i + 1}">
+          <input data-mu="${i}" maxlength="${FIG_LIMITS.unit}" value="${esc(mk.unit)}" placeholder="satuan" aria-label="Satuan label foto ${i + 1}">
+          <button type="button" class="btn ghost" data-mdel="${i}" aria-label="Hapus label foto ${i + 1}">Hapus</button>
+        </div>`).join("")}
+        ${(p.marks?.length ?? 0) < MARK_MAX ? `<button type="button" class="btn" data-a="mark">Tambah label</button>` : ""}
+      </fieldset>` : p.marks?.length ? `<small>Label di foto tersimpan, dan tampil lagi setelah foto dipilih.</small>` : ""}
     </div>
     <fieldset class="pf-fig"><legend>Ilustrasi template</legend>
       <small>Untuk pos yang belum punya foto: pilih objek, lalu isi label ukurannya. Bila ada foto, foto yang dipakai.</small>
@@ -108,7 +119,43 @@ export function postForm(el: HTMLElement, m: MapDef, index: number, act: PostFor
     else if (b.dataset.hdel) { p.hints.splice(+b.dataset.hdel, 1); act.changed(true); }
     else if (b.dataset.edel) { p.errors.splice(+b.dataset.edel, 1); act.changed(true); }
     else if (a === "nophoto") { await removeUpload(m, p.uid); act.changed(true); }
+    else if (a === "mark") { (p.marks ??= []).push(newMark(p.marks.length)); act.changed(true); }
+    else if (b.dataset.mdel && p.marks) { p.marks.splice(+b.dataset.mdel, 1); if (!p.marks.length) delete p.marks; act.changed(true); }
   });
+
+  // Labels on the photo: typing updates them, dragging moves a label or its pointer.
+  const svg = el.querySelector<SVGSVGElement>("[data-marks]");
+  const redrawMarks = () => { if (svg && photo) svg.innerHTML = marksSvg(p.marks ?? [], photo.w, photo.h); };
+  el.querySelector(".pf-marks-ed")?.addEventListener("input", (e) => {
+    const t = e.target as HTMLInputElement, d = t.dataset, mk = p.marks;
+    if (!mk) return;
+    if (d.mn) mk[+d.mn].name = t.value;
+    else if (d.mv) mk[+d.mv].value = t.value;
+    else if (d.mu) mk[+d.mu].unit = t.value;
+    else return;
+    redrawMarks(); act.changed(false);
+  });
+  if (svg) {
+    let drag: { i: number; anchor: boolean; dx: number; dy: number } | null = null;
+    const at = (e: PointerEvent) => { const r = svg.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+    const clamp = (v: number) => Math.max(0, Math.min(1, v));
+    svg.addEventListener("pointerdown", (e) => {
+      const t = (e.target as Element).closest("[data-box],[data-anchor]");
+      if (!t || !p.marks) return;
+      const anchor = t.hasAttribute("data-anchor"), i = +(t.getAttribute(anchor ? "data-anchor" : "data-box") ?? 0), mk = p.marks[i], [x, y] = at(e);
+      drag = anchor ? { i, anchor, dx: 0, dy: 0 } : { i, anchor, dx: mk.x - x, dy: mk.y - y };
+      svg.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    svg.addEventListener("pointermove", (e) => {
+      if (!drag || !p.marks) return;
+      const [x, y] = at(e), mk = p.marks[drag.i];
+      if (drag.anchor) { mk.ax = clamp(x); mk.ay = clamp(y); } else { mk.x = clamp(x + drag.dx); mk.y = clamp(y + drag.dy); }
+      redrawMarks();
+    });
+    const end = () => { if (drag) { drag = null; act.changed(false); } };
+    svg.addEventListener("pointerup", end);
+    svg.addEventListener("pointercancel", end);
+  }
 
   const fig = el.querySelector<HTMLFieldSetElement>(".pf-fig")!;
   fig.addEventListener("change", (e) => {

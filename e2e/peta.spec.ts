@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { answer } from "./helpers";
-import { demoMap } from "./cloud/fixtures";
+import { addPhoto, demoMap } from "./cloud/fixtures";
 
 /* Student pages (/) and teacher portal (/guru): map list for students and the teacher portal with its grid editor. */
 
@@ -201,4 +201,54 @@ test("guru memilih ilustrasi template dan mengisi labelnya; siswa melihatnya di 
   await expect(fig).toContainText("Keliling tandon: 400 cm");
   await expect(fig).not.toContainText("Panjang pipa");
   await expect(page.locator(".post .cap")).toContainText("Ilustrasi pengganti foto");
+});
+
+test("guru menaruh label di atas foto dan menggesernya; siswa melihat foto berlabel", async ({ page }) => {
+  const map = { ...demoMap(), published: true };
+  await page.goto("/guru");
+  await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
+  await page.click("#pinForm button[type=submit]");
+  await page.evaluate((m) => localStorage.setItem("geotrails.peta.maps", JSON.stringify([m])), map);
+  await page.goto(`/guru?edit=${map.id}`);
+  await addPhoto(page); // a plain blue 800 × 600 photo for the post at (10, 5)
+
+  await page.getByRole("button", { name: "Tambah label" }).click();
+  await page.fill('[aria-label="Nama label foto 1"]', "Lebar papan");
+  await page.fill('[aria-label="Angka label foto 1"]', "2");
+  await page.fill('[aria-label="Satuan label foto 1"]', "m");
+  const overlay = page.locator("[data-marks]");
+  await expect(overlay).toContainText("Lebar papan: 2 m");
+
+  // Drag the label box to the right half of the photo, and its pointer to the bottom.
+  const r = (await overlay.boundingBox())!, box = (await overlay.locator('[data-box="0"] rect').boundingBox())!;
+  await page.mouse.move(box.x + 10, box.y + 10); await page.mouse.down();
+  await page.mouse.move(r.x + r.width * .55, r.y + r.height * .3, { steps: 5 }); await page.mouse.up();
+  const dot = (await overlay.locator('[data-anchor="0"]').boundingBox())!;
+  await page.mouse.move(dot.x + dot.width / 2, dot.y + dot.height / 2); await page.mouse.down();
+  await page.mouse.move(r.x + r.width * .8, r.y + r.height * .9, { steps: 5 }); await page.mouse.up();
+  await expect(page.locator("#edStatus")).toHaveText("Tersimpan");
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("geotrails.peta.maps")!)[0].posts[0].marks[0]);
+  expect(saved).toMatchObject({ name: "Lebar papan", value: "2", unit: "m" });
+  expect(saved.x).toBeGreaterThan(.5); expect(saved.ay).toBeGreaterThan(.85);
+  await page.click("#edBack");
+
+  // Student: the photo carries the label (yellow pixels where the label box sits).
+  await page.goto("/");
+  await page.locator(".map-card", { hasText: "Taman Kota" }).click();
+  await page.fill("#gname", "Kelompok Label");
+  await page.click("#startForm button[type=submit]");
+  await page.keyboard.down("ArrowUp");
+  await expect(page.locator("#promptTitle")).toHaveText("Papan Info", { timeout: 15_000 });
+  await page.keyboard.up("ArrowUp");
+  await page.keyboard.press("e");
+  const img = page.locator(".post .media img");
+  await expect(img).toHaveAttribute("src", /^blob:/);
+  const px = await img.evaluate(async (el: HTMLImageElement, at) => {
+    await el.decode();
+    const c = document.createElement("canvas"); c.width = el.naturalWidth; c.height = el.naturalHeight;
+    const x = c.getContext("2d")!; x.drawImage(el, 0, 0);
+    return Array.from(x.getImageData(Math.round(at.x * c.width) + 8, Math.round(at.y * c.height) + 8, 1, 1).data);
+  }, { x: saved.x, y: saved.y });
+  // #F7C948 (label yellow), allowing for JPEG.
+  expect(px[0]).toBeGreaterThan(200); expect(px[1]).toBeGreaterThan(170); expect(px[2]).toBeLessThan(140);
 });

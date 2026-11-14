@@ -149,3 +149,59 @@ export function figureProblems(f: unknown): string[] {
   }
   return [];
 }
+
+/* ---------- labels on a photo (free placement) ---------- */
+
+/**
+ * A label the teacher placed on an uploaded photo. Positions are fractions of the photo
+ * (0–1), so they survive resizing: (x, y) is the label's top-left corner, (ax, ay) the point
+ * its dashed pointer marks.
+ */
+export interface PhotoMark { name: string; value: string; unit: string; x: number; y: number; ax: number; ay: number }
+
+export const MARK_MAX = 8;
+
+export const newMark = (i: number): PhotoMark =>
+  ({ name: "Ukuran", value: "", unit: "", x: .06, y: Math.min(.82, .08 + i * .11), ax: .5, ay: .5 });
+
+export interface MarkBox { text: string; x: number; y: number; w: number; h: number; fs: number; pad: number; ax: number; ay: number; lx: number; ly: number; pointer: boolean }
+
+/**
+ * Where a label goes on a w × h photo, in pixels. The size follows the photo's height, so it reads
+ * the same on a panorama. Shared by the editor overlay (SVG) and the picture students see (canvas).
+ */
+export function markBox(m: PhotoMark, w: number, h: number): MarkBox {
+  const fs = Math.max(12, h * .04), pad = fs * .8, text = labelText({ ...m, show: true }) || "Label";
+  const bw = Math.min(w, text.length * fs * .6 + pad * 2), bh = fs * 2;
+  const x = Math.max(0, Math.min(m.x * w, w - bw)), y = Math.max(0, Math.min(m.y * h, h - bh));
+  const ax = m.ax * w, ay = m.ay * h;
+  const lx = Math.max(x, Math.min(ax, x + bw)), ly = ay < y ? y : ay > y + bh ? y + bh : y + bh / 2;
+  return { text, x, y, w: bw, h: bh, fs, pad, ax, ay, lx, ly, pointer: Math.hypot(ax - lx, ay - ly) > fs };
+}
+
+/** The labels as SVG elements for a w × h photo (the editor draws them over the image). */
+export function marksSvg(marks: PhotoMark[], w: number, h: number): string {
+  return marks.map((m, i) => {
+    const b = markBox(m, w, h), sw = Math.max(1.5, b.fs * .12);
+    return `<g data-mark="${i}">
+      ${b.pointer ? `<line x1="${b.lx}" y1="${b.ly}" x2="${b.ax}" y2="${b.ay}" stroke="${INK}" stroke-width="${sw}" stroke-dasharray="${b.fs * .35} ${b.fs * .28}"/>` : ""}
+      <circle data-anchor="${i}" cx="${b.ax}" cy="${b.ay}" r="${b.fs * .38}" fill="#F7C948" stroke="${INK}" stroke-width="${sw}"/>
+      <g data-box="${i}"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="${b.fs * .25}" fill="#F7C948" stroke="${INK}" stroke-width="${sw * .8}"/>
+      <text x="${b.x + b.pad}" y="${b.y + b.h * .68}" font-family="JetBrains Mono,Menlo,monospace" font-size="${b.fs}" font-weight="700" fill="${INK}">${esc(b.text)}</text></g>
+    </g>`;
+  }).join("");
+}
+
+const unit01 = (v: unknown) => typeof v === "number" && v >= 0 && v <= 1;
+
+/** Problems with the labels on a photo, in Indonesian (empty when fine). */
+export function markProblems(marks: unknown): string[] {
+  if (marks == null) return [];
+  if (!Array.isArray(marks) || marks.length > MARK_MAX) return [`Label foto maksimal ${MARK_MAX}.`];
+  for (const m of marks as Partial<PhotoMark>[]) {
+    if (!m || typeof m.name !== "string" || typeof m.value !== "string" || typeof m.unit !== "string"
+      || ![m.x, m.y, m.ax, m.ay].every(unit01)) return ["Label foto rusak."];
+    if (m.name.length > FIG_LIMITS.name || m.value.length > FIG_LIMITS.value || m.unit.length > FIG_LIMITS.unit) return ["Teks label foto terlalu panjang."];
+  }
+  return [];
+}
