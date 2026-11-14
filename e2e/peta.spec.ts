@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { answer } from "./helpers";
+import { demoMap } from "./cloud/fixtures";
 
 /* Student pages (/) and teacher portal (/guru): map list for students and the teacher portal with its grid editor. */
 
@@ -163,4 +164,41 @@ test("guru mencetak lembar kerja (PDF) dari portal, kunci jawaban hanya bila dim
   await page.emulateMedia({ media: "screen" });
   await page.click("#printClose");
   await expect(page.locator("#printOv")).toHaveCount(0);
+});
+
+test("guru memilih ilustrasi template dan mengisi labelnya; siswa melihatnya di pos", async ({ page }) => {
+  const map = { ...demoMap(), published: true };
+  await page.goto("/guru");
+  await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
+  await page.click("#pinForm button[type=submit]");
+  await page.evaluate((m) => localStorage.setItem("geotrails.peta.maps", JSON.stringify([m])), map);
+  await page.goto(`/guru?edit=${map.id}`);
+  await page.click('[data-tool="select"]');
+  const box = (await page.locator("#edCanvas").boundingBox())!;
+  await page.mouse.click(box.x + 10.5 * 22, box.y + 5.5 * 22);
+
+  await page.selectOption("[data-fig]", "tandon");
+  const prev = page.locator("[data-figprev] svg");
+  await expect(prev).toContainText("Keliling tandon: 377 cm");
+  await page.fill('[aria-label="Angka label 1"]', "400");
+  await page.uncheck('[data-fs="2"]');
+  await expect(prev).toContainText("Keliling tandon: 400 cm");
+  await expect(prev).not.toContainText("Panjang pipa");
+  await expect(page.locator(".pf-photo")).toContainText("memakai ilustrasi template");
+  await expect(page.locator("#edStatus")).toHaveText("Tersimpan");
+  await page.click("#edBack");
+
+  // Student: the post shows the illustration with the teacher's labels.
+  await page.goto("/");
+  await page.locator(".map-card", { hasText: "Taman Kota" }).click();
+  await page.fill("#gname", "Kelompok Ilustrasi");
+  await page.click("#startForm button[type=submit]");
+  await page.keyboard.down("ArrowUp");
+  await expect(page.locator("#promptTitle")).toHaveText("Papan Info", { timeout: 15_000 });
+  await page.keyboard.up("ArrowUp");
+  await page.keyboard.press("e");
+  const fig = page.locator(".post .media svg");
+  await expect(fig).toContainText("Keliling tandon: 400 cm");
+  await expect(fig).not.toContainText("Panjang pipa");
+  await expect(page.locator(".post .cap")).toContainText("Ilustrasi pengganti foto");
 });
