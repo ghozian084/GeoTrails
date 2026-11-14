@@ -73,3 +73,10 @@
   background:var(--tape);color:var(--tape-ink);box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .live-msg .btn{padding:2px 10px;color:inherit}
 .dots span.locked{opacity:.5;text-decoration:line-through}
+
+/* "Unduh untuk offline" box (start screen and Teacher Portal) */
+.offline-box{margin-top:14px;display:grid;gap:6px}
+.offline-row{display:flex;flex-wrap:wrap;gap:8px}
+.offline-status{color:var(--muted)}
+.offline-status.ok{color:var(--good)}
+.offline-status.bad{color:var(--bad)}

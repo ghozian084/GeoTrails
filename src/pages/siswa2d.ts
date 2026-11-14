@@ -20,6 +20,7 @@ import { openLog } from "../ui/log";
 import { closeAll, closePost, openPost, setGame } from "../ui/post";
 import { others, startLive } from "../ui/live";
 import { initStart } from "../ui/start";
+import { registerOffline } from "../ui/offline";
 
 /* Student page (/): pick a map (Basic or a teacher-made one), then play it in 2D. */
 
@@ -60,3 +61,5 @@ $("postOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id 
 $("logOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "logOv") $("logOv").hidden = true; });
 $("finOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "finOv") $("finOv").hidden = true; });
 window.addEventListener("pagehide", () => { if (app.S) persist(); });
+
+registerOffline();

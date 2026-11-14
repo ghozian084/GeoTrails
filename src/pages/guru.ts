@@ -16,6 +16,7 @@ import { showEditor } from "../portal/editor";
 import { showList } from "../portal/list";
 import { initSync } from "../portal/sync";
 import { getMap } from "../map/store";
+import { registerOffline } from "../ui/offline";
 
 /*
  * Teacher portal for the Peta app: manage maps and edit them on a grid.
@@ -89,3 +90,5 @@ if (emulatorHost) Object.assign(window, { geotrailsTestSignIn: async (sub: strin
 $("lockBtn").onclick = () => { sessionStorage.removeItem("geotrails.peta.unlocked"); location.reload(); };
 // Stay unlocked for this browser tab (so returning from the editor does not ask again).
 if (sessionStorage.getItem("geotrails.peta.unlocked") === "1" && teacher.pinHash) open(); else gate();
+
+registerOffline();

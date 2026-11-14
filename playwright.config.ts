@@ -15,6 +15,8 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     viewport: { width: 1280, height: 860 },
     trace: "retain-on-failure",
+    // The offline service worker would answer requests the tests intercept; e2e/offline.spec.ts turns it on.
+    serviceWorkers: "block",
   },
   projects: [
     {

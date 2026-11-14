@@ -3,7 +3,7 @@
 Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah selesai.
 
 ## Prioritas tinggi
-- [ ] **Mode offline sungguhan (PWA)**: service worker agar aplikasi pasti jalan tanpa internet setelah dibuka sekali, dan bisa dipasang seperti aplikasi.
+- [x] **Mode offline sungguhan (PWA)**: service worker, tombol "Unduh untuk offline" (layar mulai dan Portal Guru), dan bisa dipasang seperti aplikasi.
 - [ ] **Hasil kelompok terkirim ke guru**: poin, status per pos, jumlah percobaan/petunjuk; rekap kelas otomatis dan unduh CSV.
 - [ ] **QR code untuk trail fisik**: kartu QR per pos untuk ditempel di objek nyata; siswa memindai di lapangan dan mengisi hasil ukur fisik.
 - [ ] **Bahasa Inggris**: tombol ID/EN untuk antarmuka dan soal dua bahasa.

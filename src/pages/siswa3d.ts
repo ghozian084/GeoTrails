@@ -21,6 +21,7 @@ import { openLog } from "../ui/log";
 import { closeAll, closePost, openPost, setGame } from "../ui/post";
 import { others, startLive } from "../ui/live";
 import { initStart } from "../ui/start";
+import { registerOffline } from "../ui/offline";
 
 /* GeoTrails Peta 3D: the same maps, progress and posts as the 2D page, in blocky 3D. */
 
@@ -81,3 +82,5 @@ $("postOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id 
 $("logOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "logOv") $("logOv").hidden = true; });
 $("finOv").addEventListener("click", (e) => { if ((e.target as HTMLElement).id === "finOv") $("finOv").hidden = true; });
 window.addEventListener("pagehide", () => { if (app.S) persist(); });
+
+registerOffline();
