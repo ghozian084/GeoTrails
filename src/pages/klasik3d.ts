@@ -17,6 +17,7 @@ import { initStart } from "../klasik/ui/start";
 import { initTouch } from "../ui/touch";
 import { closeTeacher, openTeacher } from "../klasik/teacher";
 import { createGame3D } from "../klasik/game3d";
+import { registerOffline } from "../ui/offline";
 
 /*
  * GeoTrails Blox: the same trail (posts, grading, log, teacher mode, saved progress)
@@ -70,3 +71,6 @@ setBundledBase("../posts/");
 void loadPhotos(posts.map((p) => p.id));
 setTimeout(() => $("gname").focus(), 100);
 window.addEventListener("pagehide", () => { if (session.S) persist(); });
+
+// The classic version lives in /klasik/; the service worker covers the whole site.
+registerOffline("../");

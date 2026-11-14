@@ -18,7 +18,7 @@ Pemilik: Muhammad Ghozian Kafi Ahsan, M.Pd (guru Matematika, Semesta Bilingual B
   - IndexedDB (`geotrails`, store `photos`): foto pos unggahan guru.
   - Halaman utama memakai kunci sendiri (namanya tetap `peta` agar progres lama tetap terbaca): `geotrails.peta.maps` (peta buatan guru), `geotrails.peta.deleted` (peta yang dihapus di perangkat ini dan belum dihapus di akun), `geotrails.peta.progress.<idPeta>` (progres per peta), `geotrails.peta.class` dan `geotrails.peta.classmaps.<kode>` (kelas yang diikuti dan salinan petanya untuk offline), `geotrails.peta.publicmaps` (peta publik yang dipilih siswa, untuk offline), serta IndexedDB `geotrails-peta` (foto pos per peta). PIN dan mode demo memakai `geotrails.guru` yang sama.
 - Tidak boleh mengumpulkan data pribadi (UU PDP). Identitas kelompok hanya nama kelompok dan warna avatar. Selain itu yang disimpan hanya isi pelajaran: jawaban, lembar kerja, hasil ukur fisik, refleksi, foto objek, dan isi pos. Setiap kotak teks bebas untuk siswa wajib memuat pengingat "Jangan menulis data pribadi." Tidak ada analytics atau pelacak.
-- Aplikasi harus tetap berjalan offline setelah dibuka sekali. Jangan memakai CDN saat runtime. Font dan aset di-bundle. SDK Firebase di-bundle dari npm dan hanya dimuat saat fitur kelas dipakai. Satu-satunya pengecualian: popup login Google guru di Portal Guru memuat skrip dari Google.
+- Aplikasi harus tetap berjalan offline setelah dibuka sekali. Service worker (`public/sw.js`) menyimpan halaman yang pernah dibuka, dan tombol "Unduh untuk offline" (layar mulai siswa dan Pengaturan di Portal Guru, `src/ui/offline.ts`) menyimpan seluruh aplikasi dari daftar `offline-files.json` yang dibuat saat build (plugin di `vite.config.ts`). Bisa dipasang sebagai aplikasi (`public/manifest.webmanifest`, ikon di `public/`). Tes Playwright memblokir service worker kecuali `e2e/offline.spec.ts`. Jangan memakai CDN saat runtime. Font dan aset di-bundle. SDK Firebase di-bundle dari npm dan hanya dimuat saat fitur kelas dipakai. Satu-satunya pengecualian: popup login Google guru di Portal Guru memuat skrip dari Google.
 - **Jangan mengubah angka kunci jawaban di `src/data/posts.ts`** tanpa izin eksplisit. Setiap perubahan pada data pos harus lolos `npm test`. Isi pos yang diubah guru lewat Mode guru disimpan terpisah di localStorage dan tidak menyentuh `posts.ts`.
 - Progres yang tersimpan dari versi lama harus tetap bisa dilanjutkan. Bila menambah kolom pada state, isi nilai bawaannya di `normalize()` (`src/core/store.ts`).
 - Kerjakan perubahan kecil dan bertahap. Satu fitur, lalu uji, lalu commit.
@@ -46,7 +46,7 @@ src/
   render2d/   kanvas 2D: world/props (tanah dan benda), sprite/anim (avatar pixel-art RPG), camera, bfs,
               draw2d + game2d (peta buatan guru), render + game (versi klasik)
   render3d/   three.js: world3d + game3d + move3d (peta buatan guru), avatar3d, movement, textures
-  ui/         layar mulai (pilihan RPG 2D / Blox 3D), modal pos, HUD, log, selesai, mode bersama (live),
+  ui/         layar mulai (pilihan RPG 2D / Blox 3D), modal pos, HUD, log, selesai, mode bersama (live), offline,
               kalkulator, panorama, foto, kontrol sentuh (touch, stick), dom
   portal/     Portal Guru: daftar peta, editor grid, isi pos, kelas online, pantauan langsung (monitor), sinkron akun (sync),
               pribadi/publik dan persetujuan admin (sharing), cetak lembar kerja (print)
@@ -55,8 +55,8 @@ src/
   styles/     base.css (token & komponen), peta.css, portal.css, blox.css
 firebase/     firestore.rules, database.rules.json + tes aturannya (emulator)
 tests/        Vitest
-e2e/          Playwright: peta, peta3d (halaman utama), touch + klasik/ (siswa, guru, blox) untuk versi klasik, cloud/ (emulator); helpers.ts
-public/posts/ foto & panorama per pos (pos-<id>.jpg), opsional
+e2e/          Playwright: peta, peta3d, offline (halaman utama), touch + klasik/ (siswa, guru, blox) untuk versi klasik, cloud/ (emulator); helpers.ts
+public/       sw.js (service worker offline), manifest.webmanifest + ikon; posts/ foto & panorama per pos (pos-<id>.jpg), opsional
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 WISHLIST.md   ide fitur berikutnya (dicentang bila selesai); perintah /wishlist di .claude/commands/wishlist.md
 ```

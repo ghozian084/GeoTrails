@@ -7,6 +7,7 @@ import { cachedClass, cacheClass, cachePublicMap, classMaps, isClassCode, joined
 import { cloudEnabled, liveEnabled, loadCloud, loadPublic } from "../cloud/config";
 import { freshGroup, getMap, loadProgress, saveProgress, studentMaps } from "../map/store";
 import { mapProblems } from "../map/validate";
+import { offlineBox } from "./offline";
 
 export type ViewMode = "2d" | "3d";
 const PAGE: Record<ViewMode, string> = { "2d": "./", "3d": "3d" };
@@ -70,6 +71,9 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     location.href = `${PAGE[b.dataset.mode as ViewMode]}${location.search}`;
   });
   if (cloudEnabled) initPublicBox((m) => { renderList(); choose(m); });
+  const off = document.createElement("div");
+  $("pickMap").appendChild(off);
+  offlineBox(off);
   $("pickMap").insertAdjacentHTML("beforeend", `<p class="klasik-link"><a href="klasik/">Versi klasik</a>: denah sekolah asli dengan Mode guru lama.</p>`);
 
   function choose(m: MapDef) {

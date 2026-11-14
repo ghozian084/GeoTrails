@@ -10,7 +10,7 @@ export default defineConfig({
   testDir: "e2e/cloud",
   workers: 1,
   reporter: [["list"]],
-  use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${PORT}`, viewport: { width: 1280, height: 860 }, trace: "retain-on-failure" },
+  use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${PORT}`, viewport: { width: 1280, height: 860 }, trace: "retain-on-failure", serviceWorkers: "block" },
   webServer: {
     command: `npx vite build --mode emulator --outDir dist-emulator && npx vite preview --outDir dist-emulator --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}/`,

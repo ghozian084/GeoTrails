@@ -16,6 +16,7 @@ import { closeAll, closePost, openPost, setGame } from "../klasik/ui/post";
 import { initStart } from "../klasik/ui/start";
 import { initTouch } from "../ui/touch";
 import { closeTeacher, openTeacher } from "../klasik/teacher";
+import { registerOffline } from "../ui/offline";
 
 // Hosts may serve this page at /klasik (no trailing slash), where relative links such as "3d"
 // would resolve to the site root. Add the slash so they stay inside /klasik/.
@@ -66,3 +67,6 @@ setBundledBase("../posts/");
 void loadPhotos(posts.map((p) => p.id));
 setTimeout(() => $("gname").focus(), 100);
 window.addEventListener("pagehide", () => { if (session.S) persist(); });
+
+// The classic version lives in /klasik/; the service worker covers the whole site.
+registerOffline("../");

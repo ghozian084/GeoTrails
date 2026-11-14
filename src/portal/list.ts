@@ -12,6 +12,7 @@ import { exportMap, parseMap } from "./io";
 import { onListShown } from "./sync";
 import { mountSharing } from "./sharing";
 import { showPrint } from "./print";
+import { offlineBox } from "../ui/offline";
 
 /* Portal home: every map with its status and actions. */
 
@@ -66,6 +67,8 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
       <h2>Pengaturan</h2>
       <label class="check"><input type="checkbox" id="demoChk" ${teacher.demo ? "checked" : ""}> Mode demo: semua pos terbuka tanpa menyelesaikan Pos 0</label>
       <small>Berlaku untuk GeoTrails dan GeoTrails Peta di laptop ini.</small>
+      <h3>Mode offline</h3>
+      <div id="offlineBoxGuru"></div>
     </section>`;
 
   el.querySelectorAll<HTMLElement>(".portal-card").forEach((card, i) => card.querySelector(".portal-thumb")!.appendChild(minimap(maps[i], 5)));
@@ -76,6 +79,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
   drawClasses();
 
   mountSharing();
+  offlineBox($("offlineBoxGuru"));
   onListShown(() => { if (el.isConnected && el.querySelector(".portal-grid")) showList(el, teacher); });
 
   const form = $<HTMLFormElement>("newForm");
