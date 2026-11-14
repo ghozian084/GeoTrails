@@ -35,7 +35,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 - [ ] Analisis kesalahan: pos yang paling sering salah dan kesalahan umum yang paling sering muncul.
 - Gambar soal dengan label ukuran (seperti ilustrasi Basic):
   - [x] Tahap 2 (dikerjakan dulu): ilustrasi template, 8 objek; guru mengisi nama, angka, dan satuan label.
-  - [ ] Tahap 1: label bebas di atas foto unggahan (klik titik di foto, ketik label, geser), ikut tampil di lembar kerja.
+  - [x] Tahap 1: label bebas di atas foto (tambah label, ketik nama/angka/satuan, seret label dan titik penunjuknya); tampil untuk siswa, di panorama, dan di lembar kerja.
 - [ ] Bank soal: salin pos antar peta atau dari peta publik.
 - [x] Cetak lembar kerja (PDF) untuk trail fisik: denah bernomor, tiap pos dengan foto, tabel hasil ukur, ruang perhitungan; kunci jawaban opsional untuk guru.
 - [x] Peta guru tersimpan online di akun Google.

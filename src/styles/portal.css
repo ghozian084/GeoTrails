@@ -190,3 +190,17 @@ body.printing{overflow:hidden}
 .pf-lbl [data-fn]{grid-column:2/4}
 .pf-lbl [data-fv]{grid-column:2}
 .pf-lbl [data-fu]{grid-column:3}
+
+/* Labels on the photo (editor): the photo with a draggable SVG layer on top */
+.pf-photo-edit{position:relative;line-height:0}
+.pf-photo .pf-photo-edit img{width:100%;height:auto;max-height:none;object-fit:fill;display:block;border-radius:6px}
+.pf-marks{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.pf-marks [data-box]{cursor:move}
+.pf-marks [data-anchor]{cursor:crosshair}
+.pf-marks-ed{display:grid;gap:8px;margin-top:8px}
+.pf-marks-ed small{color:var(--muted)}
+.pf-mk{grid-template-columns:auto 1fr 5.5em}
+.pf-mk [data-mn]{grid-column:2/4}
+.pf-mk [data-mv]{grid-column:2}
+.pf-mk [data-mu]{grid-column:3}
+.pf-mk [data-mdel]{grid-column:2/4;justify-self:start;padding:2px 10px}
