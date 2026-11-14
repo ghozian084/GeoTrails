@@ -204,3 +204,17 @@ body.printing{overflow:hidden}
 .pf-mk [data-mv]{grid-column:2}
 .pf-mk [data-mu]{grid-column:3}
 .pf-mk [data-mdel]{grid-column:2/4;justify-self:start;padding:2px 10px}
+
+/* Trail sessions and their results */
+.ses-results{margin-top:8px;display:grid;gap:6px}
+.ses-table{overflow-x:auto}
+.ses-table table{border-collapse:collapse;font-size:13px;min-width:100%}
+.ses-table th,.ses-table td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;white-space:nowrap}
+.ses-table td i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.ses-table .mono,.ses-table td[class^="r-"]{font-family:"JetBrains Mono",monospace}
+.ses-table .r-g{background:color-mix(in srgb,var(--good) 22%,transparent)}
+.ses-table .r-o{background:color-mix(in srgb,var(--warn) 22%,transparent)}
+.ses-table .r-try{background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.ses-table .r-none{color:var(--muted)}
+.ses-table tfoot td{color:var(--muted);font-size:12px;white-space:normal;vertical-align:top}
+.ses-results small{color:var(--muted)}

@@ -19,6 +19,7 @@ import { showPrompt, updateHud } from "../ui/hud";
 import { openLog } from "../ui/log";
 import { closeAll, closePost, openPost, setGame } from "../ui/post";
 import { others, startLive } from "../ui/live";
+import { startResults } from "../ui/results";
 import { initStart } from "../ui/start";
 import { registerOffline } from "../ui/offline";
 
@@ -52,6 +53,7 @@ function begin(map: MapDef, S: GroupState): void {
   game.begin(S.pos);
   void loadPhotos(map);
   startLive(map, game);
+  startResults(map);
 }
 
 initStart(begin, "2d");

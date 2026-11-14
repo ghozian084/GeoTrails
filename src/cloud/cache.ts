@@ -79,3 +79,24 @@ export function cachePublicMap(m: MapDef): MapDef {
 export function forgetPublicMap(id: string): void {
   localStorage.setItem(PUBLIC_KEY, JSON.stringify(publicMaps().filter((m) => m.id !== id)));
 }
+
+/* The trail session this device joined (its map is kept for offline play). */
+const SESSION_KEY = "geotrails.peta.session";
+
+export interface SessionCache { code: string; name: string; open: boolean; map: MapDef; fetchedAt: number }
+
+export function joinedSession(): SessionCache | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    return v && typeof v.code === "string" && v.map && mapProblems(v.map).length === 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setJoinedSession(s: { code: string; name: string; open: boolean; map: MapDef } | null): void {
+  try {
+    if (s) localStorage.setItem(SESSION_KEY, JSON.stringify({ ...s, map: { ...s.map, published: true, builtIn: undefined }, fetchedAt: Date.now() }));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch { /* storage unavailable */ }
+}

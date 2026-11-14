@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithPopup, signOut, type Auth } from "firebase/auth";
+import { connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signInWithCredential, signInWithPopup, signOut, type Auth, type User } from "firebase/auth";
 import {
   collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, query, serverTimestamp, setDoc, where,
   type Firestore,
@@ -35,6 +35,20 @@ function init() {
 export function firebase(): { app: FirebaseApp; auth: Auth; db: Firestore } {
   init();
   return { app, auth, db };
+}
+
+let anon: Promise<User> | null = null;
+
+/**
+ * The signed-in user, or one anonymous sign-in shared by everyone who asks at the same time
+ * (live room and session results start together; two sign-ins would give two identities).
+ */
+export async function signedInUser(): Promise<User> {
+  init();
+  await auth.authStateReady();
+  if (auth.currentUser) return auth.currentUser;
+  anon ??= signInAnonymously(auth).then((c) => c.user).finally(() => { anon = null; });
+  return anon;
 }
 
 export interface Teacher { uid: string; name: string }

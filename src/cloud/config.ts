@@ -34,3 +34,6 @@ export const loadMyMaps = () => import("./mymaps");
 
 /** Public maps (anyone can play approved ones), loaded on demand. */
 export const loadPublic = () => import("./publicmaps");
+
+/** Trail sessions (results sent to the teacher), loaded on demand. */
+export const loadSessions = () => import("./sessions");

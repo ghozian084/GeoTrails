@@ -77,12 +77,61 @@ service cloud.firestore {
       }
     }
 
+    // Trail sessions: a teacher picks a map and gets a code; groups that enter the code play that
+    // map and send their results (group name, colour, points and per-post status, attempts,
+    // hints, time and the numbers they answered). Only the session's teacher can read results.
+    match /sessions/{code} {
+      function ownsSession() { return teacher() && get(/databases/$(db)/documents/sessions/$(code)).data.ownerUid == request.auth.uid; }
+      allow get: if true;
+      allow list: if teacher() && resource.data.ownerUid == request.auth.uid;
+      allow create: if teacher()
+        && code.matches('^[A-Z2-9]{6}$')
+        && !exists(/databases/$(db)/documents/classes/$(code))
+        && request.resource.data.keys().hasOnly(['name', 'ownerUid', 'mapId', 'json', 'photos', 'open', 'createdAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60
+        && request.resource.data.mapId is string && request.resource.data.mapId.size() <= 60
+        && request.resource.data.json is string && request.resource.data.json.size() < 900000
+        && request.resource.data.photos is list && request.resource.data.photos.size() <= 12
+        && request.resource.data.open is bool
+        && request.resource.data.createdAt is timestamp;
+      // The teacher may rename the session or open/close it; the map stays as it was.
+      allow update: if teacher() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'open'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60
+        && request.resource.data.open is bool;
+      allow delete: if teacher() && resource.data.ownerUid == request.auth.uid;
+
+      match /photos/{postUid} {
+        allow read: if true;
+        allow create, update: if ownsSession()
+          && request.resource.data.keys().hasOnly(['data', 'type'])
+          && request.resource.data.type == 'image/jpeg'
+          && request.resource.data.data is string && request.resource.data.data.size() < 950000;
+        allow delete: if ownsSession();
+      }
+
+      // One document per group (its anonymous sign-in), written by that group while the session is open.
+      match /results/{uid} {
+        allow read, delete: if ownsSession();
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && get(/databases/$(db)/documents/sessions/$(code)).data.open == true
+          && request.resource.data.keys().hasOnly(['n', 'c', 's', 'posts', 'updatedAt'])
+          && request.resource.data.n is string && request.resource.data.n.size() > 0 && request.resource.data.n.size() <= 30
+          && request.resource.data.c is string && request.resource.data.c.matches('^#[0-9A-Fa-f]{6}$')
+          && request.resource.data.s is number && request.resource.data.s >= 0 && request.resource.data.s <= 1200
+          && request.resource.data.posts is list && request.resource.data.posts.size() <= 12
+          && request.resource.data.updatedAt == request.time;
+      }
+    }
+
     match /classes/{code} {
       // Reading one class needs its code; only the owner can list their own classes.
       allow get: if true;
       allow list: if signedIn() && resource.data.ownerUid == request.auth.uid;
       allow create: if teacher()
         && code.matches('^[A-Z2-9]{6}$')
+        && !exists(/databases/$(db)/documents/sessions/$(code))
         && request.resource.data.keys().hasOnly(['name', 'ownerUid', 'createdAt'])
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 60

@@ -1,9 +1,8 @@
-import { signInAnonymously } from "firebase/auth";
 import {
   connectDatabaseEmulator, get, getDatabase, onDisconnect, onValue, ref, remove, serverTimestamp, set, update,
   type Database,
 } from "firebase/database";
-import { firebase } from "./client";
+import { firebase, signedInUser } from "./client";
 import { emulatorHost } from "./config";
 import { parseControl, serverNow, setServerOffset, type Control } from "../map/control";
 import { parseRoom, STALE_MS, type LivePlayer } from "./livedata";
@@ -53,9 +52,7 @@ export interface LiveRoom {
 
 /** Join a room as a group and listen to everyone in it. */
 export async function joinRoom(code: string, mapId: string, first: LiveState, onPlayers: (ps: LivePlayer[]) => void, onControl: (c: Control) => void): Promise<LiveRoom> {
-  const { auth } = firebase();
-  await auth.authStateReady();
-  const user = auth.currentUser ?? (await signInAnonymously(auth)).user;
+  const user = await signedInUser();
   const uid = user.uid, me = ref(database(), `live/${code}/rooms/${mapId}/${uid}`);
   await sweep(code, mapId).catch(() => undefined);
   await set(me, { ...first, on: true, t: serverTimestamp() });
