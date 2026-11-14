@@ -178,3 +178,15 @@ body.printing{overflow:hidden}
   .print-bar{display:none}
   .print-sheet{width:auto;margin:0;padding:0;box-shadow:none}
 }
+
+/* Illustration template in the post form */
+.pf-fig{display:grid;gap:8px}
+.pf-fig small{color:var(--muted)}
+.pf-fig-prev svg{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
+.pf-lbls{display:grid;gap:8px}
+/* Each label on two lines (the editor's side panel is narrow): [Tampil] name / value unit */
+.pf-lbl{display:grid;grid-template-columns:auto 1fr 5.5em;gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.pf-lbl input:not([type=checkbox]){min-width:0}
+.pf-lbl [data-fn]{grid-column:2/4}
+.pf-lbl [data-fv]{grid-column:2}
+.pf-lbl [data-fu]{grid-column:3}

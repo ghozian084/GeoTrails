@@ -1,6 +1,7 @@
 import { bfs } from "../render2d/bfs";
 import { LIMITS, MAX_ERRORS, MAX_HINTS } from "../core/trail";
 import { buildingAt, OBJECT_KINDS, TILE_KINDS, walker, type MapDef, type MapPost } from "./mapdef";
+import { figureProblems } from "./figures";
 
 /* Checks a map before it is saved or shown to students. Messages are in Indonesian for the teacher. */
 
@@ -25,6 +26,7 @@ export function postProblems(p: MapPost, label: string): string[] {
   text(p.unit, "satuan", LIMITS.unit, true);
   text(p.note, "catatan", LIMITS.note, false);
   text(p.key, "model rujukan", LIMITS.key, true);
+  for (const f of figureProblems(p.figure)) out.push(`${label}: ${f}`);
   const range = (r: unknown, name: string) => {
     if (!Array.isArray(r) || r.length !== 2 || !isNum(r[0]) || !isNum(r[1])) { out.push(`${label}: rentang ${name} harus berisi dua angka.`); return false; }
     if (r[0] > r[1]) { out.push(`${label}: batas bawah rentang ${name} lebih besar dari batas atas.`); return false; }

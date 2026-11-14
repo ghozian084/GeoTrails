@@ -3,6 +3,7 @@ import { parseNumber } from "../core/parseNumber";
 import { esc } from "../ui/dom";
 import type { MapDef, MapPost } from "../map/mapdef";
 import { photoFor, removeUpload, uploadPhoto } from "../map/photos";
+import { FIG_LIMITS, newFigure, renderFigure, TEMPLATES } from "../map/figures";
 
 /*
  * Form for one post's content in the map editor. Edits are written straight into `post`;
@@ -36,13 +37,28 @@ export function postForm(el: HTMLElement, m: MapDef, index: number, act: PostFor
       <button type="button" class="btn ghost" data-a="remove">Hapus pos</button>
     </div>
     <div class="pf-photo">
-      ${photo ? `<img src="${esc(photo.url)}" alt="">` : `<span>${p.scene != null ? "Memakai ilustrasi bawaan" : "Belum ada foto"}</span>`}
+      ${photo ? `<img src="${esc(photo.url)}" alt="">` : `<span>${p.figure ? "Belum ada foto: memakai ilustrasi template di bawah" : p.scene != null ? "Memakai ilustrasi bawaan" : "Belum ada foto"}</span>`}
       <div class="row">
         <label class="btn">Pilih foto<input type="file" accept="image/*" hidden data-photo></label>
         ${photo?.source === "upload" ? `<button type="button" class="btn ghost" data-a="nophoto">Hapus foto</button>` : ""}
       </div>
       <small class="pf-msg" data-msg></small>
     </div>
+    <fieldset class="pf-fig"><legend>Ilustrasi template</legend>
+      <small>Untuk pos yang belum punya foto: pilih objek, lalu isi label ukurannya. Bila ada foto, foto yang dipakai.</small>
+      <select data-fig aria-label="Template ilustrasi">
+        <option value="">Tanpa template</option>
+        ${TEMPLATES.map((t) => `<option value="${t.id}" ${p.figure?.tpl === t.id ? "selected" : ""}>${esc(t.title)} · ${esc(t.desc)}</option>`).join("")}
+      </select>
+      ${p.figure ? `<div class="pf-fig-prev" data-figprev>${renderFigure(p.figure, p.title)}</div>
+        <div class="pf-lbls">${p.figure.labels.map((l, i) => `<div class="pf-lbl">
+          <label class="check"><input type="checkbox" data-fs="${i}" ${l.show ? "checked" : ""}> Tampil</label>
+          <input data-fn="${i}" maxlength="${FIG_LIMITS.name}" value="${esc(l.name)}" placeholder="nama ukuran" aria-label="Nama label ${i + 1}">
+          <input data-fv="${i}" maxlength="${FIG_LIMITS.value}" value="${esc(l.value)}" placeholder="angka" aria-label="Angka label ${i + 1}">
+          <input data-fu="${i}" maxlength="${FIG_LIMITS.unit}" value="${esc(l.unit)}" placeholder="satuan" aria-label="Satuan label ${i + 1}">
+        </div>`).join("")}</div>
+        <small>Tidak semua label harus dipakai di soal: data pengecoh membuat siswa memilih data yang perlu.</small>` : ""}
+    </fieldset>
     <form class="pf" autocomplete="off">
       ${input("title", "Judul", LIMITS.title)}${input("place", "Tempat", LIMITS.place)}
       ${input("concept", "Konsep", LIMITS.concept)}${input("unit", "Satuan", LIMITS.unit)}
@@ -93,6 +109,29 @@ export function postForm(el: HTMLElement, m: MapDef, index: number, act: PostFor
     else if (b.dataset.edel) { p.errors.splice(+b.dataset.edel, 1); act.changed(true); }
     else if (a === "nophoto") { await removeUpload(m, p.uid); act.changed(true); }
   });
+
+  const fig = el.querySelector<HTMLFieldSetElement>(".pf-fig")!;
+  fig.addEventListener("change", (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.matches("[data-fig]")) {
+      if (t.value) p.figure = newFigure(t.value); else delete p.figure;
+      act.changed(true);
+    } else if (t.dataset.fs && p.figure) { p.figure.labels[+t.dataset.fs].show = t.checked; redrawFig(); }
+  });
+  fig.addEventListener("input", (e) => {
+    const t = e.target as HTMLInputElement, d = t.dataset, f = p.figure;
+    if (!f) return;
+    if (d.fn) f.labels[+d.fn].name = t.value;
+    else if (d.fv) f.labels[+d.fv].value = t.value;
+    else if (d.fu) f.labels[+d.fu].unit = t.value;
+    else return;
+    redrawFig();
+  });
+  function redrawFig() {
+    const prev = el.querySelector<HTMLElement>("[data-figprev]");
+    if (prev && p.figure) prev.innerHTML = renderFigure(p.figure, p.title);
+    act.changed(false);
+  }
 
   el.querySelector<HTMLInputElement>("[data-photo]")!.addEventListener("change", async (e) => {
     const f = (e.target as HTMLInputElement).files?.[0], msg = el.querySelector<HTMLElement>("[data-msg]")!;

@@ -2,6 +2,7 @@ import type { MapDef, MapPost } from "../map/mapdef";
 import { minimap } from "../map/minimap";
 import { loadPhotos, photoFor } from "../map/photos";
 import { SCENES } from "../ui/scenes";
+import { renderFigure } from "../map/figures";
 import { esc } from "../ui/dom";
 
 /*
@@ -31,6 +32,7 @@ function overview(m: MapDef): string {
 function picture(m: MapDef, p: MapPost): string {
   const ph = photoFor(m.id, p.uid);
   if (ph) return `<img class="ps-photo" src="${esc(ph.url)}" alt="Foto ${esc(p.title)}">`;
+  if (p.figure) return `<div class="ps-photo ps-scene">${renderFigure(p.figure, p.title)}</div>`;
   if (p.scene != null && SCENES[p.scene]) return `<div class="ps-photo ps-scene">${SCENES[p.scene]()}</div>`;
   return "";
 }

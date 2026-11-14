@@ -14,6 +14,7 @@ import { control } from "../map/control";
 import { app, isGateDone, map, persist, S } from "../map/session";
 import { maybeFinish } from "./finish";
 import { updateHud } from "./hud";
+import { renderFigure } from "../map/figures";
 
 /*
  * Post modal for the Peta app: the original src/ui/post.ts adapted to maps with any number
@@ -54,9 +55,11 @@ function renderPost(): void {
   const id = cur!;
   const p = app.posts[id], st = S().posts[id], done = !!st.result, free = isFreePost(id);
   const mp = map().posts[id], photo = photoFor(map().id, mp.uid);
-  const scene = mp.scene != null ? SCENES[mp.scene] : undefined;
+  // Illustration when there is no photo: the teacher's template figure, else the built-in scene (Basic).
+  const fig = mp.figure ? renderFigure(mp.figure, p.title) : "";
+  const scene = fig ? () => fig : mp.scene != null ? SCENES[mp.scene] : undefined;
   // A wide photo becomes a panorama; otherwise the built-in illustration, if this post has one.
-  const pano = photo ? isPanorama(photo.w, photo.h) : !!scene && p.media === "pano";
+  const pano = photo ? isPanorama(photo.w, photo.h) : !!scene && !fig && p.media === "pano";
   const media = pano
     ? `<div class="pano" id="pano"><span class="badge">PANORAMA 360°</span><div class="ctl"><button type="button" data-l aria-label="Putar kiri">◀</button><button type="button" data-z>Perbesar</button><button type="button" data-r aria-label="Putar kanan">▶</button></div></div>`
     : photo ? `<div class="frame"><img src="${esc(photo.url)}" alt="Foto ${esc(p.title)}"></div>`

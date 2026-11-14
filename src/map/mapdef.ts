@@ -1,4 +1,5 @@
 import type { ErrorPattern, Post } from "../core/types";
+import type { PostFigure } from "./figures";
 
 /*
  * Teacher-made maps for the "Peta" app. A map is plain JSON so it can be stored in
@@ -39,6 +40,8 @@ export interface MapPost {
   errors: ErrorPattern[]; hints: string[];
   /** Built-in illustration to show when there is no photo (Basic map only). */
   scene?: number;
+  /** Illustration from a template, with the teacher's labels (shown when there is no photo). */
+  figure?: PostFigure;
   media?: "pano" | "img";
   focus?: number;
 }
