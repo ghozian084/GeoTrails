@@ -74,12 +74,12 @@ test("guru menerbitkan peta ke kelas, siswa memuatnya dengan kode kelas", async 
   await expect(s.locator(".map-card", { hasText: "Taman Kota" })).toHaveCount(0);
 });
 
-test("kode kelas yang salah ditolak", async ({ page }) => {
+test("kode kelas atau sesi yang salah ditolak", async ({ page }) => {
   await page.goto("/");
   await page.fill("#classCode", "12");
   await page.click("#classForm button[type=submit]");
-  await expect(page.locator("#classStatus")).toHaveText("Kode kelas terdiri dari 6 huruf/angka.");
+  await expect(page.locator("#classStatus")).toHaveText("Kode terdiri dari 6 huruf/angka.");
   await page.fill("#classCode", "ZZZZZZ");
   await page.click("#classForm button[type=submit]");
-  await expect(page.locator("#classStatus")).toHaveText("Kode kelas tidak ditemukan.");
+  await expect(page.locator("#classStatus")).toHaveText("Kode kelas atau sesi tidak ditemukan.");
 });

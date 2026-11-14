@@ -12,6 +12,7 @@ import { exportMap, parseMap } from "./io";
 import { onListShown } from "./sync";
 import { mountSharing } from "./sharing";
 import { showPrint } from "./print";
+import { sessionSection } from "./sessions";
 import { offlineBox } from "../ui/offline";
 
 /* Portal home: every map with its status and actions. */
@@ -61,6 +62,7 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
         </div>
       </article>`;
     }).join("")}</div>
+    <section class="portal-settings portal-sessions" id="sessionBox"></section>
     <section class="portal-settings portal-approve" id="approveBox" hidden></section>
     <section class="portal-settings portal-classes" id="classBox"></section>
     <section class="portal-settings">
@@ -77,6 +79,9 @@ export function showList(el: HTMLElement, teacher: TeacherSettings, msg = ""): v
   const box = $("classBox");
   const drawClasses = (): void => { if (box.isConnected) classSection(box, drawClasses, () => showList(el, teacher)); };
   drawClasses();
+  const sbox = $("sessionBox");
+  const drawSessions = (): void => { if (sbox.isConnected) sessionSection(sbox, drawSessions); };
+  drawSessions();
 
   mountSharing();
   offlineBox($("offlineBoxGuru"));

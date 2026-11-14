@@ -1,5 +1,5 @@
 import { $, esc } from "./dom";
-import { joinedClass } from "../cloud/cache";
+import { joinedClass, joinedSession } from "../cloud/cache";
 import { liveEnabled, loadLive } from "../cloud/config";
 import type { LiveRoom, LiveState } from "../cloud/live";
 import { deduped, doneCount, postString, ranked, round2, type LivePlayer } from "../cloud/livedata";
@@ -52,7 +52,8 @@ function togglePanel(show: boolean): void {
 
 /** Join the class room for this map (no-op when not in a class or not configured). */
 export function startLive(map: MapDef, game: MapGame): void {
-  const code = joinedClass();
+  // The session's room when playing the session's map, otherwise the joined class's room.
+  const sess = joinedSession(), code = sess && sess.map.id === map.id ? sess.code : joinedClass();
   if (!liveEnabled || !code || room) return;
   const btn = $("liveBtn");
   btn.hidden = false; btn.classList.remove("on"); btn.title = "Menghubungkan ke kelas…";

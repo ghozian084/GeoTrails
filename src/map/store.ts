@@ -1,7 +1,7 @@
 import { normalize } from "../core/store";
 import type { GroupState } from "../core/types";
 import { basicMap, BASIC_ID } from "./basic";
-import { classMaps, publicMaps } from "../cloud/cache";
+import { classMaps, joinedSession, publicMaps } from "../cloud/cache";
 import { walker, type MapDef } from "./mapdef";
 import { mapProblems } from "./validate";
 
@@ -32,13 +32,16 @@ export function customMaps(): MapDef[] {
 export const allMaps = (): MapDef[] => [basicMap(), ...customMaps()];
 
 export const getMap = (id: string): MapDef | undefined =>
-  allMaps().find((m) => m.id === id) ?? classMaps().find((m) => m.id === id) ?? publicMaps().find((m) => m.id === id);
+  allMaps().find((m) => m.id === id) ?? sessionMaps().find((m) => m.id === id) ?? classMaps().find((m) => m.id === id) ?? publicMaps().find((m) => m.id === id);
 
-/** Maps students can choose: published local maps without problems, the joined class's maps, then public maps picked here. */
+const sessionMaps = (): MapDef[] => { const s = joinedSession(); return s ? [s.map] : []; };
+
+/** Maps students can choose: the joined session's map first, published local maps, the joined class's maps, then public maps picked here. */
 export function studentMaps(): MapDef[] {
-  const out = allMaps().filter((m) => m.published && mapProblems(m).length === 0);
+  const out = [...sessionMaps()];
   const ids = new Set(out.map((m) => m.id));
-  for (const m of [...classMaps(), ...publicMaps()]) if (!ids.has(m.id)) { ids.add(m.id); out.push(m); }
+  for (const m of [...allMaps().filter((x) => x.published && mapProblems(x).length === 0), ...classMaps(), ...publicMaps()])
+    if (!ids.has(m.id)) { ids.add(m.id); out.push(m); }
   return out;
 }
 

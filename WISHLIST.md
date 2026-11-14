@@ -4,7 +4,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 
 ## Prioritas tinggi
 - [x] **Mode offline sungguhan (PWA)**: service worker, tombol "Unduh untuk offline" (layar mulai dan Portal Guru), dan bisa dipasang seperti aplikasi.
-- [ ] **Hasil kelompok terkirim ke guru**: poin, status per pos, jumlah percobaan/petunjuk; rekap kelas otomatis dan unduh CSV.
+- [x] **Hasil kelompok terkirim ke guru**, hanya di dalam sesi trail (kode sesi): poin, status dan jawaban angka per pos, petunjuk, durasi; tabel hasil, rekap per pos, unduh CSV.
 - [ ] **QR code untuk trail fisik**: kartu QR per pos untuk ditempel di objek nyata; siswa memindai di lapangan dan mengisi hasil ukur fisik.
 - [ ] **Bahasa Inggris**: tombol ID/EN untuk antarmuka dan soal dua bahasa.
 - [x] **Tes otomatis di GitHub** di setiap PR (CI), plus pemasangan aturan Firebase otomatis.
@@ -32,7 +32,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 ## Untuk guru
 - [ ] Denah sekolah (foto) sebagai latar di editor grid untuk dijiplak.
 - [x] Kendali kelas langsung: tahan dan mulai serentak, kirim pesan ke semua kelompok, buka/kunci pos (hentikan sesi = "Hapus data sesi").
-- [ ] Analisis kesalahan: pos yang paling sering salah dan kesalahan umum yang paling sering muncul.
+- [ ] Analisis kesalahan: pos yang paling sering salah dan kesalahan umum yang paling sering muncul (dasarnya sudah ada: jawaban angka per pos di hasil sesi dan rekap per pos).
 - Gambar soal dengan label ukuran (seperti ilustrasi Basic):
   - [x] Tahap 2 (dikerjakan dulu): ilustrasi template, 8 objek; guru mengisi nama, angka, dan satuan label.
   - [x] Tahap 1: label bebas di atas foto (tambah label, ketik nama/angka/satuan, seret label dan titik penunjuknya); tampil untuk siswa, di panorama, dan di lembar kerja.

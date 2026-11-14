@@ -1,5 +1,6 @@
 import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";
+import { serverTimestamp } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
 /* Security rules for GeoTrails Peta classes. Run with `npm run test:rules` (starts the emulators). */
@@ -209,5 +210,51 @@ describe("peta publik", () => {
     await assertFails(a.doc("public/x").set(pub("guru-a", { posts: 0 })));
     await assertFails(a.doc("public/x").set(pub("guru-a", { json: "x".repeat(900001) })));
     await assertFails(a.doc("public/x").set(pub("guru-a", { name: "" })));
+  });
+});
+
+describe("sesi trail dan hasil kelompok", () => {
+  const sess = (owner: string, extra: Record<string, unknown> = {}) => ({ name: "9A Senin", ownerUid: owner, mapId: "m-1", json: "{}", photos: [], open: true, createdAt: now(), ...extra });
+  const result = (extra: Record<string, unknown> = {}) => ({ n: "Kelompok A", c: "#2E86AB", s: 100, posts: [{ r: "g", s: 100, a: [12.6], h: 0, t: 30 }], updatedAt: serverTimestamp(), ...extra });
+  const siswa = (uid: string) => env.authenticatedContext(uid, { firebase: { sign_in_provider: "anonymous" } }).firestore();
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc("sessions/SES234").set(sess("guru-a"));
+      await ctx.firestore().doc("sessions/TUTUP2").set(sess("guru-a", { open: false }));
+      await ctx.firestore().doc("sessions/SES234/results/siswa-2").set({ ...result(), updatedAt: now() });
+    });
+  });
+
+  it("guru membuat sesi; kode tidak boleh sama dengan kode kelas; siswa tidak bisa membuat sesi", async () => {
+    const a = env.authenticatedContext("guru-a").firestore();
+    await assertSucceeds(a.doc("sessions/NEW234").set(sess("guru-a")));
+    await assertFails(a.doc("sessions/ABC234").set(sess("guru-a"))); // ABC234 adalah kode kelas
+    await assertFails(a.doc("classes/SES234").set(cls("guru-a")));  // dan sebaliknya
+    await assertFails(a.doc("sessions/NEW235").set(sess("guru-b")));
+    await assertFails(siswa("siswa-1").doc("sessions/NEW236").set(sess("siswa-1")));
+    await assertSucceeds(a.doc("sessions/SES234").update({ open: false }));
+    await assertFails(a.doc("sessions/SES234").update({ json: "{\"x\":1}" })); // peta sesi tidak diubah
+  });
+
+  it("siswa (anonim) membaca sesi dan menulis hasil kelompoknya sendiri selama sesi dibuka", async () => {
+    const db = siswa("siswa-1");
+    await assertSucceeds(db.doc("sessions/SES234").get());
+    await assertSucceeds(db.doc("sessions/SES234/results/siswa-1").set(result()));
+    await assertFails(db.doc("sessions/SES234/results/siswa-2").set(result()));   // kelompok lain
+    await assertFails(db.doc("sessions/TUTUP2/results/siswa-1").set(result()));   // sesi ditutup
+    await assertFails(db.doc("sessions/SES234/results/siswa-1").set(result({ email: "x@y" })));
+    await assertFails(db.doc("sessions/SES234/results/siswa-1").set(result({ s: 5000 })));
+    await assertFails(db.doc("sessions/SES234/results/siswa-1").set(result({ updatedAt: now() })));
+    await assertFails(env.unauthenticatedContext().firestore().doc("sessions/SES234/results/x").set(result()));
+  });
+
+  it("hanya guru pemilik sesi yang membaca dan menghapus hasil", async () => {
+    await assertSucceeds(env.authenticatedContext("guru-a").firestore().collection("sessions/SES234/results").get());
+    await assertSucceeds(env.authenticatedContext("guru-a").firestore().doc("sessions/SES234/results/siswa-2").delete());
+    await assertFails(env.authenticatedContext("guru-b").firestore().collection("sessions/SES234/results").get());
+    await assertFails(siswa("siswa-1").collection("sessions/SES234/results").get());
+    await assertFails(siswa("siswa-2").doc("sessions/SES234/results/siswa-2").get());
+    await assertFails(env.authenticatedContext("guru-b").firestore().collection("sessions").get());
+    await assertSucceeds(env.authenticatedContext("guru-a").firestore().collection("sessions").where("ownerUid", "==", "guru-a").get());
   });
 });
