@@ -3,10 +3,11 @@ import { COLORS } from "../core/store";
 import type { GroupState } from "../core/types";
 import type { MapDef } from "../map/mapdef";
 import { minimap } from "../map/minimap";
-import { cachedClass, cacheClass, cachePublicMap, classMaps, isClassCode, joinedClass, joinedSession, normalizeCode, publicMaps, setJoinedClass, setJoinedSession } from "../cloud/cache";
-import { cloudEnabled, liveEnabled, loadCloud, loadPublic, loadSessions } from "../cloud/config";
+import { cachedClass, cacheClass, classMaps, isClassCode, joinedClass, joinedSession, normalizeCode, publicMaps, setJoinedClass, setJoinedSession } from "../cloud/cache";
+import { cloudEnabled, liveEnabled, loadCloud, loadSessions } from "../cloud/config";
 import { freshGroup, getMap, loadProgress, saveProgress, studentMaps } from "../map/store";
 import { mapProblems } from "../map/validate";
+import { initExplore } from "./explore";
 import { offlineBox } from "./offline";
 
 export type ViewMode = "2d" | "3d";
@@ -70,7 +71,11 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     if (!b || !chosen || b.dataset.mode === mode) return;
     location.href = `${PAGE[b.dataset.mode as ViewMode]}${location.search}`;
   });
-  if (cloudEnabled) initPublicBox((m) => { renderList(); choose(m); });
+  // Jelajah: a pin's "Main RPG 2D"/"Main Blox 3D" opens that view with the map (same page: just choose it).
+  initExplore(list, (m, view) => {
+    if (view && view !== mode) { location.href = `${PAGE[view]}?map=${encodeURIComponent(m.id)}`; return; }
+    renderList(); choose(m);
+  });
   const off = document.createElement("div");
   $("pickMap").appendChild(off);
   offlineBox(off);
@@ -170,41 +175,4 @@ function initClassBox(onChange: () => void, onSession: (m: MapDef) => void): voi
   if (code && navigator.onLine) void sync(code, false);
   // Refresh the session (open or closed, its map) quietly.
   if (sess && navigator.onLine) void syncSession(sess.code, false).catch(() => undefined);
-}
-
-/**
- * "Jelajahi peta publik": approved public maps, loaded from the internet only when asked.
- * A chosen map is downloaded with its photos and kept on this device for offline play.
- */
-function initPublicBox(onPick: (m: MapDef) => void): void {
-  const box = document.createElement("div");
-  box.className = "public-box";
-  box.innerHTML = `<button type="button" class="btn" id="publicOpen">Jelajahi peta publik</button><small id="publicStatus" aria-live="polite"></small><div class="public-list" id="publicList"></div>`;
-  $("mapList").after(box);
-  const status = (t: string) => { $("publicStatus").textContent = t; };
-  $("publicOpen").onclick = async () => {
-    status("Memuat peta publik…");
-    try {
-      const list = await (await loadPublic()).approvedMaps();
-      status(list.length ? "Pilih peta untuk diunduh dan dimainkan." : "Belum ada peta publik.");
-      $("publicList").innerHTML = list.map((p) => `<button type="button" class="map-card public" data-pub="${esc(p.id)}">
-        <span class="map-info"><b>${esc(p.name)}</b><small>${p.posts} pos · ${p.cols}×${p.rows} petak · Publik</small></span></button>`).join("");
-    } catch {
-      status("Tidak bisa memuat peta publik. Periksa internet lalu coba lagi.");
-    }
-  };
-  $("publicList").addEventListener("click", async (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>("[data-pub]");
-    if (!b) return;
-    status("Mengunduh peta…");
-    try {
-      const m = await (await loadPublic()).downloadPublic(b.dataset.pub!);
-      if (!m || mapProblems(m).length) { status("Peta ini tidak bisa dipakai."); return; }
-      const saved = cachePublicMap(m);
-      $("publicList").innerHTML = ""; status("");
-      onPick(saved);
-    } catch {
-      status("Gagal mengunduh. Periksa internet lalu coba lagi.");
-    }
-  });
 }

@@ -41,7 +41,7 @@ test("guru mengajukan peta publik, admin menyetujui, siswa mana pun bisa memaink
   // ---- Student: nothing public yet.
   const s = await studentLaptop(browser);
   await s.click("#publicOpen");
-  await expect(s.locator("#publicStatus")).toHaveText("Belum ada peta publik.", { timeout: 15_000 });
+  await expect(s.locator("#publicStatus")).toContainText("Belum ada peta publik.", { timeout: 15_000 });
 
   // ---- Admin approves it.
   const a = await (await browser.newContext()).newPage();
@@ -83,5 +83,5 @@ test("guru mengajukan peta publik, admin menyetujui, siswa mana pun bisa memaink
   await expect(card.locator("[data-share]")).toContainText("Pribadi", { timeout: 15_000 });
   const s2 = await studentLaptop(browser);
   await s2.click("#publicOpen");
-  await expect(s2.locator("#publicStatus")).toHaveText("Belum ada peta publik.", { timeout: 15_000 });
+  await expect(s2.locator("#publicStatus")).toContainText("Belum ada peta publik.", { timeout: 15_000 });
 });

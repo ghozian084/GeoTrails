@@ -252,3 +252,63 @@ test("guru menaruh label di atas foto dan menggesernya; siswa melihat foto berla
   // #F7C948 (label yellow), allowing for JPEG.
   expect(px[0]).toBeGreaterThan(200); expect(px[1]).toBeGreaterThan(170); expect(px[2]).toBeLessThan(140);
 });
+
+/** OpenStreetMap tiles replaced by a blank image, so the test stays off the internet. */
+async function fakeTiles(page: Page) {
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=", "base64");
+  let tiles = 0;
+  await page.route("https://tile.openstreetmap.org/**", (r) => { tiles++; return r.fulfill({ contentType: "image/png", body: png }); });
+  // The public-map list (Firestore) stays offline here too; the cloud tests cover it.
+  await page.route(/googleapis\.com/, (r) => r.abort());
+  return { count: () => tiles, reset: () => { tiles = 0; } };
+}
+
+test("Jelajah: guru memasang lokasi peta, siswa melihat pin dan memainkannya dalam 2D atau 3D", async ({ page }) => {
+  const tiles = await fakeTiles(page);
+  const map = { ...demoMap(), published: true };
+  await page.goto("/guru");
+  await page.fill("#pin1", "2468"); await page.fill("#pin2", "2468");
+  await page.click("#pinForm button[type=submit]");
+  await page.evaluate((m) => localStorage.setItem("geotrails.peta.maps", JSON.stringify([m])), map);
+  await page.goto(`/guru?edit=${map.id}`);
+  // Half-filled: the check list says what is missing.
+  await page.fill("#plName", "Taman Kota Semarang");
+  await expect(page.locator("#problems")).toContainText("Lokasi peta: koordinat tidak valid.");
+  await page.fill("#plCoord", "-6.98500, 110.40900");
+  await expect(page.locator("#problems")).toContainText("Peta siap dipakai siswa.");
+  // Picking on the map moves the pin and fills the coordinates.
+  await page.click("#plPick");
+  await expect(page.locator("#plMap .wpin")).toBeVisible();
+  const mb = (await page.locator("#plMap").boundingBox())!;
+  await page.mouse.click(mb.x + mb.width / 2 + 40, mb.y + mb.height / 2);
+  await expect(page.locator("#plCoord")).not.toHaveValue("-6.98500, 110.40900");
+  await page.fill("#plCoord", "-6.98500, 110.40900");
+  await page.click("#edBack");
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("geotrails.peta.maps")!)[0].place);
+  expect(saved).toEqual({ name: "Taman Kota Semarang", lat: -6.985, lng: 110.409 });
+
+  // Student: nothing is loaded from the internet until "Jelajah peta" is pressed.
+  tiles.reset();
+  await page.goto("/");
+  await expect(page.locator(".map-card", { hasText: map.name })).toBeVisible();
+  expect(tiles.count()).toBe(0);
+  await page.click("#publicOpen");
+  await expect(page.locator("#publicStatus")).toContainText("Klik pin untuk melihat trail di tempat itu.");
+  await expect(page.locator("#exploreMap .wpin")).toHaveCount(2); // Basic at school, the teacher's map at the park
+  await expect(page.locator("#exploreMap .leaflet-control-attribution")).toContainText("OpenStreetMap");
+  expect(tiles.count()).toBeGreaterThan(0);
+  await page.locator('#exploreMap .leaflet-marker-icon[title^="Taman Kota Semarang"]').click();
+  const card = page.locator("#exploreCard");
+  await expect(card).toContainText(map.name);
+  await expect(card).toContainText("Di perangkat ini");
+  await card.getByRole("button", { name: "Main RPG 2D" }).click();
+  await expect(page.locator("#chosenName")).toHaveText(map.name);
+
+  // "Main Blox 3D" opens the 3D page with the map.
+  await page.goto("/");
+  await page.click("#publicOpen");
+  await page.locator('#exploreMap .leaflet-marker-icon[title^="Semesta"]').click();
+  await expect(card).toContainText("Basic");
+  await card.getByRole("button", { name: "Main Blox 3D" }).click();
+  await expect(page).toHaveURL(/\/3d\?map=basic$/);
+});

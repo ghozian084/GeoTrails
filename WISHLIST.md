@@ -13,11 +13,11 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
 - [ ] **Layar Jelajah berupa peta dunia sungguhan** dengan pin trail di lokasi nyata. Pin dibuka → kartu trail (nama, tempat, jumlah pos, denah mini) → **Main RPG 2D** atau **Main Blox 3D**.
   - Pin hijau = publik, kuning = kelas yang diikuti, abu-abu = tersimpan di perangkat; peta Basic jadi pin pertama di Semesta BBS Semarang.
   - Daftar biasa tetap ada di bawah peta sebagai cadangan (HP lambat, offline).
-  - Sumber peta (perlu diputuskan): A. OpenStreetMap saat online, daftar saat offline (disarankan; perlu pengecualian aturan "tanpa CDN" khusus layar Jelajah dan atribusi OSM), B. peta sederhana bawaan (offline penuh, kurang detail), C. peta berbayar/berkunci.
+  - Sumber peta (diputuskan): OpenStreetMap saat online, daftar saat offline.
   - Privasi: pin hanya di tempat umum (sekolah, taman); lokasi siswa untuk "Dekat saya" tidak disimpan dan tidak dikirim.
   - Tahapan:
-    - [ ] 1. Data lokasi peta (lat, lng, nama tempat), isian pin di editor, aturan keamanan untuk kolom baru.
-    - [ ] 2. Layar Jelajah: peta + pin + kartu trail; "Jelajahi peta publik" dan daftar peta pindah ke sini.
+    - [x] 1. Data lokasi peta (lat, lng, nama tempat), isian pin di editor, aturan keamanan untuk kolom baru.
+    - [x] 2. Layar Jelajah: peta + pin + kartu trail (tombol "Jelajah peta" di layar mulai; daftar peta tetap sebagai cadangan).
     - [ ] 3. Tombol "Dekat saya", lalu titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
 
 ## Dunia bersama ala Roblox
