@@ -64,6 +64,10 @@
 .public-list:empty{display:none}
 
 /* Jelajah: trails as pins on a real-world map (OpenStreetMap), also the editor's pin picker */
+.public-box.explore{margin:0 0 12px}
+.explore-head{width:100%;align-items:center;gap:8px;flex-wrap:nowrap}
+.explore-head .btn{padding:6px 10px;font-size:14px}
+.explore-head b{font-family:var(--f-display);font-size:18px}
 .explore-wrap{display:grid;gap:8px;width:100%}
 .explore-map,.pl-map{width:100%;height:min(52vh,420px);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface-2);color:var(--muted)}
 .pl-map{height:260px;margin-top:6px;font-size:13px}

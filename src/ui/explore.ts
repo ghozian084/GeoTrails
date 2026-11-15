@@ -10,8 +10,9 @@ import { $, esc } from "./dom";
 import type { PinKind, WorldMap, WorldPin } from "./worldmap";
 
 /*
- * "Jelajah peta" on the start screen: trails as pins on a real-world map (OpenStreetMap, loaded
- * from the internet only when the button is pressed). A pin opens a card with the trail (name,
+ * Jelajah, the first thing on the start screen: trails as pins on a real-world map (OpenStreetMap).
+ * It opens by itself when the device is online, unless the group hid it on this device
+ * (`geotrails.peta.explore` = "off"); offline, the map list below is used instead. A pin opens a card with the trail (name,
  * place, posts, mini plan) and "Main RPG 2D" / "Main Blox 3D". Pins: green = public, yellow = the
  * joined class or session, grey = saved on this device. The approved public maps are also listed
  * below the map, as a fallback for slow phones and maps without a location.
@@ -38,10 +39,17 @@ function localEntries(): Entry[] {
   }));
 }
 
-export function initExplore(after: HTMLElement, onPlay: (m: MapDef, mode: PlayMode) => void): void {
+const PREF = "geotrails.peta.explore";
+const hiddenPref = (): boolean => { try { return localStorage.getItem(PREF) === "off"; } catch { return false; } };
+const setHiddenPref = (off: boolean): void => { try { if (off) localStorage.setItem(PREF, "off"); else localStorage.removeItem(PREF); } catch { /* storage unavailable */ } };
+
+/** Returns a function that redraws the pins (after joining or leaving a class or session). */
+export function initExplore(before: HTMLElement, onPlay: (m: MapDef, mode: PlayMode) => void): () => void {
   const box = document.createElement("div");
   box.className = "public-box explore";
-  box.innerHTML = `<button type="button" class="btn" id="publicOpen">Jelajah peta</button>
+  box.innerHTML = `<div class="row explore-head"><b>Jelajah</b><span class="spacer"></span>
+      <button type="button" class="btn ghost" id="publicOpen">Tampilkan peta</button>
+      <button type="button" class="btn ghost" id="exploreHide" hidden>Sembunyikan</button></div>
     <small id="publicStatus" aria-live="polite">Temukan trail di peta dunia, lalu main dalam RPG 2D atau Blox 3D.</small>
     <div class="explore-wrap" id="exploreWrap" hidden>
       <div class="explore-map" id="exploreMap" aria-label="Peta Jelajah"></div>
@@ -49,7 +57,7 @@ export function initExplore(after: HTMLElement, onPlay: (m: MapDef, mode: PlayMo
       <div class="explore-card" id="exploreCard" hidden></div>
     </div>
     <div class="public-list" id="publicList"></div>`;
-  after.after(box);
+  before.before(box);
   const status = (t: string) => { $("publicStatus").textContent = t; };
   let world: WorldMap | null = null, groups: Entry[][] = [], remote: PublicSummary[] = [];
 
@@ -104,10 +112,15 @@ export function initExplore(after: HTMLElement, onPlay: (m: MapDef, mode: PlayMo
       <span class="map-info"><b>${esc(p.name)}</b><small>${p.posts} pos · ${p.cols}×${p.rows} petak · Publik${p.place ? ` · ${esc(p.place.name)}` : ""}</small></span></button>`).join("");
   }
 
-  $("publicOpen").onclick = async () => {
+  // One load at a time (the automatic one at start and a press of "Perbarui" may overlap).
+  let loading: Promise<void> = Promise.resolve();
+  const open = (byHand: boolean): Promise<void> => (loading = loading.then(() => load(byHand)));
+  async function load(byHand: boolean) {
     const wrap = $("exploreWrap");
-    if (!navigator.onLine) { status("Jelajah butuh internet. Tanpa internet, pakai daftar peta di atas."); return; }
+    if (!navigator.onLine) { status("Tanpa internet: pilih peta dari daftar di bawah. Peta Jelajah muncul lagi saat online."); return; }
+    setHiddenPref(false);
     wrap.hidden = false;
+    $("publicOpen").textContent = "Perbarui"; $("exploreHide").hidden = false;
     status("Memuat peta Jelajah…");
     const [mapOk] = await Promise.all([
       world ? Promise.resolve(true) : import("./worldmap").then(({ createWorldMap }) => { world = createWorldMap($("exploreMap")); return true; }, () => false),
@@ -115,12 +128,20 @@ export function initExplore(after: HTMLElement, onPlay: (m: MapDef, mode: PlayMo
     ]);
     if (!mapOk) wrap.hidden = true;
     world?.resize();
-    if (mapOk) wrap.scrollIntoView({ block: "nearest" });
+    if (mapOk && byHand) wrap.scrollIntoView({ block: "nearest" });
     const n = drawPins();
     listPublic();
-    status((!mapOk ? "Peta Jelajah tidak bisa dimuat. Pakai daftar peta di atas."
+    status((!mapOk ? "Peta Jelajah tidak bisa dimuat. Pilih peta dari daftar di bawah."
       : n ? "Klik pin untuk melihat trail di tempat itu." : "Belum ada trail dengan lokasi.")
       + (cloudEnabled && !remote.length ? " Belum ada peta publik." : ""));
+  }
+
+  $("publicOpen").onclick = () => void open(true);
+  $("exploreHide").onclick = () => {
+    setHiddenPref(true);
+    $("exploreWrap").hidden = true; $("exploreHide").hidden = true;
+    $("publicOpen").textContent = "Tampilkan peta";
+    status("Peta Jelajah disembunyikan di perangkat ini. Pilih peta dari daftar di bawah.");
   };
 
   $("publicList").addEventListener("click", (e) => {
@@ -137,4 +158,6 @@ export function initExplore(after: HTMLElement, onPlay: (m: MapDef, mode: PlayMo
       } catch { status("Gagal mengunduh. Periksa internet lalu coba lagi."); }
     })();
   });
+  if (!hiddenPref()) void open(false);
+  return () => { if (world) drawPins(); };
 }

@@ -17,7 +17,7 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
   - Privasi: pin hanya di tempat umum (sekolah, taman); lokasi siswa untuk "Dekat saya" tidak disimpan dan tidak dikirim.
   - Tahapan:
     - [x] 1. Data lokasi peta (lat, lng, nama tempat), isian pin di editor, aturan keamanan untuk kolom baru.
-    - [x] 2. Layar Jelajah: peta + pin + kartu trail (tombol "Jelajah peta" di layar mulai; daftar peta tetap sebagai cadangan).
+    - [x] 2. Layar Jelajah: peta + pin + kartu trail (tampilan utama layar mulai, terbuka sendiri saat online; daftar peta tetap sebagai cadangan).
     - [ ] 3. Tombol "Dekat saya", lalu titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
 
 ## Dunia bersama ala Roblox

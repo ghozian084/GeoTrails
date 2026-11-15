@@ -52,7 +52,8 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     list.querySelectorAll<HTMLElement>(".map-card").forEach((card, i) => card.querySelector(".map-thumb")!.appendChild(minimap(maps[i], 4)));
   }
   renderList();
-  initClassBox(renderList, (m) => { renderList(); choose(m); });
+  let redrawPins = (): void => {};
+  initClassBox(() => { renderList(); redrawPins(); }, (m) => { renderList(); redrawPins(); choose(m); });
   list.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>("[data-id]");
     const m = b && maps.find((x) => x.id === b.dataset.id);
@@ -72,7 +73,7 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     location.href = `${PAGE[b.dataset.mode as ViewMode]}${location.search}`;
   });
   // Jelajah: a pin's "Main RPG 2D"/"Main Blox 3D" opens that view with the map (same page: just choose it).
-  initExplore(list, (m, view) => {
+  redrawPins = initExplore($("classJoin"), (m, view) => {
     if (view && view !== mode) { location.href = `${PAGE[view]}?map=${encodeURIComponent(m.id)}`; return; }
     renderList(); choose(m);
   });

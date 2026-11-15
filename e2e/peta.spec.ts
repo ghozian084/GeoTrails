@@ -287,16 +287,13 @@ test("Jelajah: guru memasang lokasi peta, siswa melihat pin dan memainkannya dal
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("geotrails.peta.maps")!)[0].place);
   expect(saved).toEqual({ name: "Taman Kota Semarang", lat: -6.985, lng: 110.409 });
 
-  // Student: nothing is loaded from the internet until "Jelajah peta" is pressed.
-  tiles.reset();
+  // Student: Jelajah is the first thing on the start screen and opens by itself.
   await page.goto("/");
-  await expect(page.locator(".map-card", { hasText: map.name })).toBeVisible();
-  expect(tiles.count()).toBe(0);
-  await page.click("#publicOpen");
   await expect(page.locator("#publicStatus")).toContainText("Klik pin untuk melihat trail di tempat itu.");
   await expect(page.locator("#exploreMap .wpin")).toHaveCount(2); // Basic at school, the teacher's map at the park
   await expect(page.locator("#exploreMap .leaflet-control-attribution")).toContainText("OpenStreetMap");
   expect(tiles.count()).toBeGreaterThan(0);
+  await expect(page.locator(".map-card", { hasText: map.name })).toBeVisible(); // the list stays below
   await page.locator('#exploreMap .leaflet-marker-icon[title^="Taman Kota Semarang"]').click();
   const card = page.locator("#exploreCard");
   await expect(card).toContainText(map.name);
@@ -306,9 +303,18 @@ test("Jelajah: guru memasang lokasi peta, siswa melihat pin dan memainkannya dal
 
   // "Main Blox 3D" opens the 3D page with the map.
   await page.goto("/");
-  await page.click("#publicOpen");
   await page.locator('#exploreMap .leaflet-marker-icon[title^="Semesta"]').click();
   await expect(card).toContainText("Basic");
   await card.getByRole("button", { name: "Main Blox 3D" }).click();
   await expect(page).toHaveURL(/\/3d\?map=basic$/);
+
+  // Hidden on this device: nothing is loaded from the internet any more, the list is used.
+  await page.goto("/");
+  await page.click("#exploreHide");
+  tiles.reset();
+  await page.reload();
+  await expect(page.locator(".map-card", { hasText: "Basic" })).toBeVisible();
+  await expect(page.locator("#exploreWrap")).toBeHidden();
+  await expect(page.locator("#publicOpen")).toHaveText("Tampilkan peta");
+  expect(tiles.count()).toBe(0);
 });
