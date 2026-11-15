@@ -181,6 +181,10 @@ describe("peta publik", () => {
     await assertFails(a.doc("public/ok/photos/p2").set(photo()));
     await assertFails(a.doc("public/ok").delete());
     await assertFails(env.authenticatedContext("guru-a", { firebase: { sign_in_provider: "anonymous" } }).firestore().doc("public/x").set(pub("guru-a")));
+    // Pin on the Jelajah map: place, lat and lng together, in range.
+    await assertSucceeds(a.doc("public/pin").set(pub("guru-a", { place: "Taman Kota", lat: -7.04, lng: 110.35 })));
+    await assertFails(a.doc("public/pin2").set(pub("guru-a", { place: "Taman Kota", lat: 95, lng: 110.35 })));
+    await assertFails(a.doc("public/pin3").set(pub("guru-a", { lat: -7.04, lng: 110.35 })));
   });
 
   it("perubahan oleh pemilik kembali menunggu persetujuan; pemilik bisa menarik petanya", async () => {

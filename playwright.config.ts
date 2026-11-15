@@ -17,6 +17,9 @@ export default defineConfig({
     trace: "retain-on-failure",
     // The offline service worker would answer requests the tests intercept; e2e/offline.spec.ts turns it on.
     serviceWorkers: "block",
+    // No internet during tests: anything not on this machine goes to a dead proxy and fails
+    // (the Jelajah map's tiles and public maps; tests that need them answer with page.route).
+    proxy: { server: "http://127.0.0.1:9", bypass: "localhost,127.0.0.1" },
   },
   projects: [
     {

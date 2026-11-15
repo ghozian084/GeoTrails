@@ -63,6 +63,35 @@
 .public-list{display:grid;gap:8px;width:100%}
 .public-list:empty{display:none}
 
+/* Jelajah: trails as pins on a real-world map (OpenStreetMap), also the editor's pin picker */
+.public-box.explore{margin:0 0 12px}
+.explore-head{width:100%;align-items:center;gap:8px;flex-wrap:nowrap}
+.explore-head .btn{padding:6px 10px;font-size:14px}
+.explore-head b{font-family:var(--f-display);font-size:18px}
+.explore-wrap{display:grid;gap:8px;width:100%}
+.explore-map,.pl-map{width:100%;height:min(52vh,420px);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface-2);color:var(--muted)}
+.pl-map{height:260px;margin-top:6px;font-size:13px}
+.pl-map:not(.leaflet-container){display:grid;place-content:center;padding:12px;text-align:center}
+.explore-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.explore-legend span{display:inline-flex;align-items:center;gap:6px}
+.explore-legend .wpin{position:relative;display:inline-block;width:12px;height:12px}
+.wpin{--pin:var(--lock);width:26px;height:26px}
+.wpin::before{content:"";position:absolute;inset:0;background:var(--pin);border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 4px rgba(0,0,0,.35)}
+.explore-legend .wpin::before{border-width:1px}
+.wpin span{position:absolute;inset:0;display:grid;place-content:center;font:700 12px/1 var(--f-mono);color:#fff;transform:translateY(-1px)}
+.wpin-public{--pin:var(--accent)}
+.wpin-class{--pin:var(--tape)}
+.wpin-class span{color:var(--tape-ink)}
+.wpin-device{--pin:#7C8C86}
+.explore-card{width:100%;display:grid;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:10px}
+.explore-card header b{font-family:var(--f-display)}
+.explore-trail{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
+.explore-trail .map-info{display:grid}
+.explore-trail .map-info small{color:var(--muted)}
+.explore-trail > .row{grid-column:1/-1;flex-wrap:wrap;gap:8px}
+.explore-trail .map-thumb canvas{display:block;border-radius:6px}
+.leaflet-container{font-family:var(--f-body)}
+
 /* Teacher controls seen by students: waiting / countdown, and the teacher's message */
 .live-wait{position:absolute;inset:0;z-index:7;display:grid;place-content:center;justify-items:center;gap:6px;text-align:center;
   background:color-mix(in srgb,var(--bg) 70%,transparent);color:var(--ink);padding:16px}

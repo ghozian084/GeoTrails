@@ -48,6 +48,9 @@ export interface MapPost {
   focus?: number;
 }
 
+/** Where the trail is in the real world: its pin on the Jelajah map (a public place, never a home). */
+export interface MapPlace { name: string; lat: number; lng: number }
+
 export interface MapDef {
   format: "geotrails-map";
   version: 1;
@@ -65,6 +68,8 @@ export interface MapDef {
   published: boolean;
   /** The built-in Basic map (read-only; duplicate it to edit). */
   builtIn?: boolean;
+  /** Pin on the Jelajah map (optional). */
+  place?: MapPlace;
   /** Last change (ms), set when the map is saved; decides which copy wins when syncing with the teacher's account. */
   updatedAt?: number;
 }

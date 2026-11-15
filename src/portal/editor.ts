@@ -11,6 +11,7 @@ import { saveMap } from "../map/store";
 import { mapProblems, MAX_POSTS, SIZE } from "../map/validate";
 import { drawEditor, TILE_COLOR, type EditorView } from "./canvas";
 import { showList } from "./list";
+import { placeHtml, wirePlace } from "./place";
 import { postForm } from "./postform";
 import { setEditing } from "./sync";
 
@@ -264,10 +265,12 @@ export function showEditor(root: HTMLElement, map: MapDef, teacher: TeacherSetti
             <div class="row"><input id="szCols" type="number" min="${SIZE.minCols}" max="${SIZE.maxCols}" value="${m.cols}" aria-label="Kolom"><span>×</span><input id="szRows" type="number" min="${SIZE.minRows}" max="${SIZE.maxRows}" value="${m.rows}" aria-label="Baris"><button class="btn" id="szApply">Ubah ukuran</button></div>
             <small>Bagian yang terpotong (kanan/bawah) ikut terhapus.</small>
           </div>
+          ${placeHtml(m)}
           <h3>Daftar pos</h3>
           ${m.posts.length ? `<ol class="post-list" start="0">${m.posts.map((p, i) => `<li><button type="button" class="linkish" data-post="${i}">${esc(p.title || "Pos tanpa judul")}</button></li>`).join("")}</ol>` : `<p class="sub">Belum ada pos. Pilih alat <b>Pos</b>, lalu klik peta.</p>`}
         </section><div id="problems"></div>`;
       $("szApply").onclick = () => resize(+$<HTMLInputElement>("szCols").value, +$<HTMLInputElement>("szRows").value);
+      wirePlace(m, changed);
       panel.querySelector(".post-list")?.addEventListener("click", (e) => {
         const b = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-post]");
         if (b) select(+b.dataset.post!, null);

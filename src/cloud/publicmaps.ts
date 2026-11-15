@@ -6,18 +6,21 @@ import { firebase, fitPhoto, fromBase64 } from "./client";
 /*
  * Public maps, playable by anyone (see firebase/firestore.rules):
  *   admins/{uid}                          site admins (created by hand)
- *   public/{mapId}                        { name, json, photos: postUid[], ownerUid, status, updatedAt, posts, cols, rows }
+ *   public/{mapId}                        { name, json, photos: postUid[], ownerUid, status, updatedAt, posts, cols, rows, [place, lat, lng] }
  *   public/{mapId}/photos/{postUid}       { data: base64 JPEG, type }
  * A teacher's map waits as "pending" until an admin approves it; every later change waits again.
  */
 
 export type PublicStatus = "pending" | "approved";
-export interface PublicSummary { id: string; name: string; status: PublicStatus; updatedAt: number; posts: number; cols: number; rows: number; ownerUid: string }
+export interface PublicSummary { id: string; name: string; status: PublicStatus; updatedAt: number; posts: number; cols: number; rows: number; ownerUid: string;
+  /** Pin on the Jelajah map, when the map has one. */
+  place?: { name: string; lat: number; lng: number } }
 
 const col = () => collection(firebase().db, "public");
 const summary = (id: string, d: Record<string, unknown>): PublicSummary => ({
   id, name: String(d.name), status: d.status as PublicStatus, updatedAt: Number(d.updatedAt) || 0,
   posts: Number(d.posts) || 0, cols: Number(d.cols) || 0, rows: Number(d.rows) || 0, ownerUid: String(d.ownerUid),
+  place: typeof d.lat === "number" && typeof d.lng === "number" ? { name: String(d.place ?? ""), lat: d.lat, lng: d.lng } : undefined,
 });
 
 export async function isAdmin(uid: string): Promise<boolean> {
@@ -50,7 +53,8 @@ export async function sharePublic(m: MapDef, uid: string, admin: boolean): Promi
   for (const p of m.posts) if (await getPhoto(photoKey(m.id, p.uid)).catch(() => undefined)) photos.push(p.uid);
   // The map document first: the photo rules check its owner.
   const json = JSON.stringify({ ...m, published: true, builtIn: undefined });
-  await setDoc(ref, { name: m.name.slice(0, 60) || "Peta", json, photos, ownerUid: uid, status, updatedAt: m.updatedAt ?? Date.now(), posts: m.posts.length, cols: m.cols, rows: m.rows });
+  await setDoc(ref, { name: m.name.slice(0, 60) || "Peta", json, photos, ownerUid: uid, status, updatedAt: m.updatedAt ?? Date.now(), posts: m.posts.length, cols: m.cols, rows: m.rows,
+    ...(m.place ? { place: m.place.name.slice(0, 60), lat: m.place.lat, lng: m.place.lng } : {}) });
   for (const pu of photos) {
     const blob = (await getPhoto(photoKey(m.id, pu)))!;
     await setDoc(doc(ref, "photos", pu), { data: await fitPhoto(blob), type: "image/jpeg" });

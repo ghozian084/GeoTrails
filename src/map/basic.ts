@@ -14,6 +14,9 @@ const STYLE: Record<string, [string, number]> = {
 
 export const BASIC_ID = "basic";
 
+/** Basic's pin on the Jelajah map: Semesta Bilingual Boarding School, Gunungpati, Semarang (approximate). */
+export const BASIC_PLACE = { name: "Semesta Bilingual Boarding School, Semarang", lat: -7.04, lng: 110.356 };
+
 export function basicMap(): MapDef {
   const inCourt = (x: number, y: number) => x >= 8 && x <= 27 && y >= 8 && y <= 16;
   let t = "";
@@ -41,7 +44,7 @@ export function basicMap(): MapDef {
       green: [...p.green], orange: [...p.orange], key: p.key, errors: p.errors.map((e) => ({ ...e })), hints: [...p.hints],
       scene: p.id, media: p.media, focus: p.focus,
     })),
-    start: [...START], published: true, builtIn: true,
+    start: [...START], published: true, builtIn: true, place: { ...BASIC_PLACE },
   };
 }
 

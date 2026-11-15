@@ -46,12 +46,24 @@ export function postProblems(p: MapPost, label: string): string[] {
   return out;
 }
 
+/** Problems with the map's pin on the Jelajah map. */
+export function placeProblems(p: unknown): string[] {
+  const q = p as { name?: unknown; lat?: unknown; lng?: unknown } | null;
+  if (!q || typeof q !== "object") return ["Lokasi peta rusak."];
+  const out: string[] = [];
+  if (typeof q.name !== "string" || !q.name.trim()) out.push("Lokasi peta: nama tempat wajib diisi.");
+  else if (q.name.trim().length > 60) out.push("Lokasi peta: nama tempat maksimal 60 karakter.");
+  if (!isNum(q.lat) || !isNum(q.lng) || Math.abs(q.lat) > 90 || Math.abs(q.lng) > 180) out.push("Lokasi peta: koordinat tidak valid.");
+  return out;
+}
+
 /** Every problem that stops a map from being used. Empty array = valid. */
 export function mapProblems(m: MapDef): string[] {
   const out: string[] = [];
   if (!m || m.format !== "geotrails-map") return ["Berkas ini bukan peta GeoTrails."];
   if (typeof m.name !== "string" || !m.name.trim()) out.push("Nama peta wajib diisi.");
   else if (m.name.trim().length > 40) out.push("Nama peta maksimal 40 karakter.");
+  if (m.place !== undefined) out.push(...placeProblems(m.place));
   if (!Number.isInteger(m.cols) || !Number.isInteger(m.rows) || m.cols < SIZE.minCols || m.cols > SIZE.maxCols || m.rows < SIZE.minRows || m.rows > SIZE.maxRows)
     return [...out, `Ukuran peta harus ${SIZE.minCols}–${SIZE.maxCols} kolom dan ${SIZE.minRows}–${SIZE.maxRows} baris.`];
   if (typeof m.tiles !== "string" || m.tiles.length !== m.cols * m.rows || [...m.tiles].some((c) => !TILE_KINDS.includes(c as never)))
