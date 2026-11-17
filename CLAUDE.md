@@ -60,6 +60,7 @@ e2e/          Playwright: peta, peta3d, offline (halaman utama), touch + klasik/
 public/       sw.js (service worker offline), manifest.webmanifest + ikon; posts/ foto & panorama per pos (pos-<id>.jpg), opsional
 prototype/geotrails.html   prototipe awal — acuan tampilan & perilaku
 WISHLIST.md   ide fitur berikutnya (dicentang bila selesai); perintah /wishlist di .claude/commands/wishlist.md
+RINGKASAN.md  ringkasan proyek untuk sesi baru (riwayat fitur, keputusan Bapak, cara kerja); perintah /ringkasan, perbarui setiap fitur selesai
 ```
 
 ## Logika inti (jangan diubah tanpa diskusi)
