@@ -2,7 +2,7 @@
 
 Catatan untuk sesi Claude berikutnya dan untuk Bapak. Sesi Claude tidak saling mengingat; yang terbawa hanya isi repo, yaitu file ini, `CLAUDE.md` (aturan dan rincian teknis), dan `WISHLIST.md` (rencana fitur). Panggil dengan perintah `/ringkasan`.
 
-Terakhir diperbarui: 17 November 2026, setelah PR #24.
+Terakhir diperbarui: 18 November 2026, setelah PR #26.
 
 ## 1. Apa itu GeoTrails
 - Math Trail virtual untuk siswa Grade 9 (IGCSE 0607) di Semesta Bilingual Boarding School, Semarang. Pemilik: Bapak Muhammad Ghozian Kafi Ahsan.
@@ -58,6 +58,8 @@ Terakhir diperbarui: 17 November 2026, setelah PR #24.
 | #22 | Mode offline sungguhan (PWA): tombol "Unduh untuk offline", bisa dipasang sebagai aplikasi |
 | #23 | Sesi trail: kode sesi 6 karakter, hasil kelompok (poin, status dan jawaban angka per pos, petunjuk, durasi) terkirim ke guru; tabel hasil, rekap per pos, CSV, tutup/hapus sesi |
 | #24 | Jelajah ala MathCityMap sebagai tampilan utama layar mulai: peta dunia OpenStreetMap dengan pin trail, kartu trail lalu Main RPG 2D/Blox 3D; guru mengisi "Lokasi di Jelajah" di editor |
+| #25 | `RINGKASAN.md` dan perintah `/ringkasan` |
+| #26 | Menu utama lebih nyaman: halaman penuh dua kolom (Jelajah kiri, kode dan daftar peta kanan), kartu "Lanjutkan petualangan" sekali klik, "Cara bermain" bisa dilipat, langkah 1–2, pratinjau avatar |
 
 ## 5. Keputusan Bapak yang perlu diingat
 - **Hasil kelompok** hanya dikirim di dalam sesi trail yang dibuat guru, dengan kode sesi sendiri (tidak sama dengan kode kelas). Isinya hasil + jawaban angka, dan tersimpan sampai guru menghapus sesi.

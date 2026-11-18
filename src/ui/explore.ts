@@ -44,7 +44,7 @@ const hiddenPref = (): boolean => { try { return localStorage.getItem(PREF) === 
 const setHiddenPref = (off: boolean): void => { try { if (off) localStorage.setItem(PREF, "off"); else localStorage.removeItem(PREF); } catch { /* storage unavailable */ } };
 
 /** Returns a function that redraws the pins (after joining or leaving a class or session). */
-export function initExplore(before: HTMLElement, onPlay: (m: MapDef, mode: PlayMode) => void): () => void {
+export function initExplore(parent: HTMLElement, onPlay: (m: MapDef, mode: PlayMode) => void): () => void {
   const box = document.createElement("div");
   box.className = "public-box explore";
   box.innerHTML = `<div class="row explore-head"><b>Jelajah</b><span class="spacer"></span>
@@ -57,7 +57,7 @@ export function initExplore(before: HTMLElement, onPlay: (m: MapDef, mode: PlayM
       <div class="explore-card" id="exploreCard" hidden></div>
     </div>
     <div class="public-list" id="publicList"></div>`;
-  before.before(box);
+  parent.appendChild(box);
   const status = (t: string) => { $("publicStatus").textContent = t; };
   let world: WorldMap | null = null, groups: Entry[][] = [], remote: PublicSummary[] = [];
 
@@ -159,5 +159,5 @@ export function initExplore(before: HTMLElement, onPlay: (m: MapDef, mode: PlayM
     })();
   });
   if (!hiddenPref()) void open(false);
-  return () => { if (world) drawPins(); };
+  return () => { if (world) { world.resize(); drawPins(); } };
 }
