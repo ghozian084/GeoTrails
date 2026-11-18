@@ -21,7 +21,7 @@
 .class-join{display:grid;gap:4px;margin:0 0 10px;padding:10px;border:1px dashed var(--line);border-radius:10px}
 .class-join .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .class-join label{font-weight:700;font-size:13px;color:var(--muted)}
-.class-join input{font:700 16px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;width:9ch;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
+.class-join input{font:700 16px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;width:12ch;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
 .class-join small{color:var(--muted);font-size:13px}
 .class-join small.bad{color:var(--bad)}
 .class-join .cls-code{font:700 14px var(--f-mono);letter-spacing:.1em;background:var(--tape);color:var(--tape-ink);padding:1px 8px;border-radius:5px}
@@ -109,3 +109,99 @@
 .offline-status{color:var(--muted)}
 .offline-status.ok{color:var(--good)}
 .offline-status.bad{color:var(--bad)}
+
+/* Main menu (start screen of / and /3d): a full page with a survey-grid backdrop instead of a small
+   dialog over an empty map. Desktop: Jelajah on the left, code box and map list on the right. */
+.menu-ov{background-color:var(--bg);background-image:
+  linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:32px 32px;background-position:-1px -1px}
+.menu-ov::before{content:"";position:absolute;inset:0;background:var(--bg);opacity:.72;pointer-events:none}
+.sheet.menu{position:relative;max-width:1120px;padding:24px 28px 20px;transition:max-width .2s ease}
+.sheet.menu.narrow{max-width:640px}
+.menu-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,400px);gap:12px 32px;align-items:start;margin-bottom:16px}
+.menu-hero h1{font-size:44px}
+.menu-hero .lede{margin:0;max-width:52ch}
+.howto{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:0 14px}
+.howto summary{cursor:pointer;font-weight:700;padding:10px 0;list-style-position:inside}
+.howto summary:focus-visible{outline:3px solid var(--tape);outline-offset:2px;border-radius:4px}
+.howto .steps{margin:0 0 12px;padding:0 0 0 20px;background:none}
+.sheet.menu.narrow .menu-hero{grid-template-columns:1fr}
+
+.menu-steps{list-style:none;margin:0 0 16px;padding:0;display:flex;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.menu-steps li{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:999px;border:1px solid var(--line)}
+.menu-steps li i{font:700 12px var(--f-mono);font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line)}
+.menu-steps li[aria-current]{color:var(--ink);font-weight:700;border-color:var(--accent)}
+.menu-steps li[aria-current] i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.menu-steps li.done i{background:var(--good);border-color:var(--good);color:#fff}
+
+/* One-click resume for groups that already played on this device */
+.continue{margin:0 0 18px}
+.continue-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.continue-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;font:inherit;color:var(--ink);
+  background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:8px 12px 8px 8px;cursor:pointer}
+.continue-avatar{width:52px;height:64px;border-radius:8px;background:var(--map-grass);display:grid;place-items:end center;padding-bottom:4px;overflow:hidden}
+.continue-avatar canvas{display:block;image-rendering:pixelated;width:36px;height:52px}
+.continue-go{display:grid;justify-items:center;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:6px 12px;font-weight:700}
+.continue-go small{font-weight:400;font-size:11px;opacity:.85}
+.continue-card .map-info b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progress{display:block;height:6px;margin-top:4px;background:var(--line);border-radius:3px;overflow:hidden;max-width:220px}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:3px}
+
+/* Pick step: Jelajah big on the left, code box and list on the right */
+.pick-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:20px;align-items:start}
+.pick-main .public-box.explore{margin:0}
+.pick-main .explore-map{height:min(58vh,520px)}
+.pick-side{display:grid;gap:0;align-content:start}
+.pick-side .map-list{max-height:min(52vh,480px)}
+.map-card,.continue-card{transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+.map-card:hover,.continue-card:hover{transform:translateY(-1px);box-shadow:0 6px 16px var(--map-shadow)}
+.continue-card:focus-visible{outline:3px solid var(--tape);outline-offset:2px}
+.menu-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.menu-foot .klasik-link{margin:0;color:var(--muted);font-size:13px}
+.menu-foot:empty{display:none}
+
+/* Group step: the chosen map as a card, a live avatar preview beside the name and colour */
+.sheet.menu .chosen{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;margin:0 0 14px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.sheet.menu .chosen .map-thumb{width:96px;height:64px}
+.chosen-info{display:grid;min-width:0}
+.chosen-info small{color:var(--muted);font-size:13px}
+.chosen-info b{font-family:var(--f-display);font-size:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume-row{margin-bottom:14px}
+.group-form{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start}
+.avatar-preview{display:grid;justify-items:center;gap:8px;width:132px;padding:12px 8px 10px;border-radius:12px;background:var(--map-grass);border:1px solid var(--line)}
+.avatar-preview canvas{display:block;width:72px;height:104px;image-rendering:pixelated;filter:drop-shadow(3px 4px 0 var(--map-shadow))}
+.avatar-preview b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 12px var(--f-mono);background:var(--tape);color:var(--tape-ink);padding:2px 8px;border-radius:5px}
+.field .pd-note{color:var(--muted);font-size:13px}
+.swatches button{transition:transform .12s ease}
+.swatches button[aria-pressed="true"]{transform:scale(1.12)}
+.btn.big{font-size:17px;padding:12px 24px}
+
+@media (max-width:860px){
+  .menu-hero{grid-template-columns:1fr}
+  .pick-grid{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  .pick-side{display:contents}
+  .pick-side .class-join{order:1}
+  .pick-main{order:2;margin-bottom:14px}
+  .pick-side .pick-h{order:3}
+  .pick-side .map-list{order:4;max-height:none;overflow:visible}
+  .pick-main .explore-map{height:min(46vh,380px)}
+  .menu-foot{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .overlay.menu-ov{padding:0}
+  .sheet.menu,.sheet.menu.narrow{max-width:none;min-height:100%;border-radius:0;border:0;box-shadow:none;
+    padding:max(18px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(18px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .menu-hero h1{font-size:36px}
+  .group-form{grid-template-columns:1fr}
+  .avatar-preview{width:auto;grid-template-columns:auto auto;align-items:end;justify-content:center;gap:14px}
+  .avatar-preview canvas{width:54px;height:78px}
+  .start-foot .btn.big{width:100%}
+  .continue-card{grid-template-columns:auto minmax(0,1fr)}
+  .continue-go{grid-column:1/-1;grid-template-columns:auto auto;gap:8px;align-items:baseline;justify-content:center}
+  .sheet.menu .chosen{grid-template-columns:auto minmax(0,1fr)}
+  .sheet.menu .chosen .btn{grid-column:1/-1;justify-self:start}
+}
+@media (prefers-reduced-motion:reduce){
+  .sheet.menu,.map-card,.continue-card,.swatches button{transition:none}
+  .map-card:hover,.continue-card:hover{transform:none}
+}

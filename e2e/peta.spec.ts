@@ -318,3 +318,27 @@ test("Jelajah: guru memasang lokasi peta, siswa melihat pin dan memainkannya dal
   await expect(page.locator("#publicOpen")).toHaveText("Tampilkan peta");
   expect(tiles.count()).toBe(0);
 });
+
+test("menu utama: pratinjau avatar ikut nama, kelompok yang pernah main melanjutkan dengan sekali klik", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#continueBox")).toBeHidden();
+  await expect(page.locator("#howto")).toHaveAttribute("open", "");
+  await page.locator(".map-card", { hasText: "Basic" }).click();
+  await expect(page.locator("#stepGroup")).toHaveAttribute("aria-current", "step");
+  await expect(page.locator("#chosenMeta")).toContainText("6 pos");
+  await page.fill("#gname", "Kelompok Menu");
+  await expect(page.locator("#avatarName")).toHaveText("Kelompok Menu");
+  await page.click("#startForm button[type=submit]");
+  await expect(page.locator("#mapTag")).toHaveText("Basic");
+
+  await page.goto("/");
+  const card = page.locator(".continue-card");
+  await expect(card).toHaveCount(1);
+  await expect(card).toContainText("Kelompok Menu");
+  await expect(card).toContainText("Basic · 0/6 pos selesai");
+  await expect(page.locator("#howto")).not.toHaveAttribute("open", "");
+  await card.click();
+  await expect(page.locator("#startOv")).toBeHidden();
+  await expect(page.locator("#groupName")).toHaveText("Kelompok Menu");
+  await expect(page).toHaveURL(/\?map=basic/);
+});

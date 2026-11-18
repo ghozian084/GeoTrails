@@ -9,9 +9,34 @@ import { freshGroup, getMap, loadProgress, saveProgress, studentMaps } from "../
 import { mapProblems } from "../map/validate";
 import { initExplore } from "./explore";
 import { offlineBox } from "./offline";
+import { spriteFrame } from "../render2d/sprite";
+import type { Pose } from "../render2d/anim";
 
 export type ViewMode = "2d" | "3d";
 const PAGE: Record<ViewMode, string> = { "2d": "./", "3d": "3d" };
+const VIEW_NAME: Record<ViewMode, string> = { "2d": "RPG 2D", "3d": "Blox 3D" };
+
+/** Pixel avatar drawn into a canvas, scaled without smoothing. */
+function drawAvatar(cv: HTMLCanvasElement, color: string, pose: Pose = 0): void {
+  const ctx = cv.getContext("2d");
+  if (!ctx) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(spriteFrame(color, "down", pose, false), 0, 0, cv.width, cv.height);
+}
+
+function avatarCanvas(color: string, scale: number): HTMLCanvasElement {
+  const cv = document.createElement("canvas");
+  cv.width = 18 * scale; cv.height = 26 * scale;
+  drawAvatar(cv, color);
+  return cv;
+}
+
+/** "3/6 pos" plus a bar; finished trails say so. */
+function progressHtml(done: number, total: number): string {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return `<span class="progress" role="img" aria-label="${done} dari ${total} pos selesai"><i style="width:${pct}%"></i></span>`;
+}
 
 /*
  * Start screen: first the list of maps, then the view (RPG 2D or Blox 3D) and the group
@@ -32,7 +57,23 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     if (!b) return;
     pickColor = b.dataset.c!;
     [...sw.children].forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    drawAvatar(preview2d, pickColor);
   });
+
+  // Live avatar preview in the group step: the chosen colour, the typed name, a gentle walk cycle.
+  const preview2d = $<HTMLCanvasElement>("avatarPreview");
+  preview2d.width = 18 * 5; preview2d.height = 26 * 5;
+  drawAvatar(preview2d, pickColor);
+  $("gname").addEventListener("input", () => {
+    $("avatarName").textContent = $<HTMLInputElement>("gname").value.trim() || "Kelompokmu";
+  });
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let tick = 0;
+  if (!still) setInterval(() => {
+    if ($("groupStep").hidden || $("startOv").hidden) return;
+    tick = (tick + 1) % 4;
+    drawAvatar(preview2d, pickColor, ([0, 1, 0, 2] as Pose[])[tick]);
+  }, 260);
 
   const list = $("mapList");
   function renderList() {
@@ -46,12 +87,40 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
       return `<button type="button" class="map-card" data-id="${esc(m.id)}">
         <span class="map-thumb"></span>
         <span class="map-info"><b>${esc(m.name)}</b><small>${m.posts.length} pos · ${m.cols}×${m.rows} petak${sess?.map.id === m.id ? ` · Sesi ${esc(sess.name)}` : fromClass.has(m.id) ? ` · Kelas ${esc(className)}` : fromPublic.has(m.id) ? " · Publik" : ""}</small>
-        ${saved ? `<small class="map-saved">Lanjutkan: ${esc(saved.name)} · ${done}/${m.posts.length} selesai</small>` : ""}</span>
+        ${saved ? `<small class="map-saved">Lanjutkan: ${esc(saved.name)} · ${done}/${m.posts.length} selesai</small>${progressHtml(done, m.posts.length)}` : ""}</span>
       </button>`;
     }).join("") || `<p class="sub">Belum ada peta yang ditampilkan. Minta guru menampilkan peta atau memberi kode kelas.</p>`;
     list.querySelectorAll<HTMLElement>(".map-card").forEach((card, i) => card.querySelector(".map-thumb")!.appendChild(minimap(maps[i], 4)));
+    renderContinue();
   }
+
+  // "Lanjutkan petualangan": groups that already played on this laptop resume with one click.
+  let resumable: { m: MapDef; S: GroupState }[] = [];
+  function renderContinue() {
+    resumable = maps.map((m) => ({ m, S: loadProgress(m)! })).filter((x) => x.S)
+      .sort((a, b) => (b.S.started || 0) - (a.S.started || 0)).slice(0, 3);
+    $("continueBox").hidden = !resumable.length;
+    $("continueList").innerHTML = resumable.map(({ m, S }, i) => {
+      const done = S.posts.filter((p) => p.result).length, total = m.posts.length;
+      return `<button type="button" class="continue-card" data-k="${i}">
+        <span class="continue-avatar"></span>
+        <span class="map-info"><b>${esc(S.name)}</b><small>${esc(m.name)} · ${done === total ? "Semua pos selesai" : `${done}/${total} pos selesai`}</small>${progressHtml(done, total)}</span>
+        <span class="continue-go">Lanjutkan<small>${VIEW_NAME[mode]}</small></span>
+      </button>`;
+    }).join("");
+    $("continueList").querySelectorAll<HTMLElement>(".continue-avatar").forEach((el, i) => el.appendChild(avatarCanvas(resumable[i].S.color, 2)));
+  }
+  $("continueList").addEventListener("click", (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>("[data-k]");
+    const r = b && resumable[+b.dataset.k!];
+    if (!r) return;
+    choose(r.m);
+    begin(r.m, r.S);
+  });
   renderList();
+  // "Cara bermain" stays open for new groups and folds away once this laptop has played
+  // (and on phones, where it would push the map off the screen).
+  if (resumable.length || matchMedia("(max-width:600px)").matches) $<HTMLDetailsElement>("howto").open = false;
   let redrawPins = (): void => {};
   initClassBox(() => { renderList(); redrawPins(); }, (m) => { renderList(); redrawPins(); choose(m); });
   list.addEventListener("click", (e) => {
@@ -73,20 +142,23 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     location.href = `${PAGE[b.dataset.mode as ViewMode]}${location.search}`;
   });
   // Jelajah: a pin's "Main RPG 2D"/"Main Blox 3D" opens that view with the map (same page: just choose it).
-  redrawPins = initExplore($("classJoin"), (m, view) => {
+  redrawPins = initExplore($("pickMain"), (m, view) => {
     if (view && view !== mode) { location.href = `${PAGE[view]}?map=${encodeURIComponent(m.id)}`; return; }
     renderList(); choose(m);
   });
   const off = document.createElement("div");
-  $("pickMap").appendChild(off);
+  $("menuFoot").appendChild(off);
   offlineBox(off);
-  $("pickMap").insertAdjacentHTML("beforeend", `<p class="klasik-link"><a href="klasik/">Versi klasik</a>: denah sekolah asli dengan Mode guru lama.</p>`);
+  $("menuFoot").insertAdjacentHTML("beforeend", `<p class="klasik-link"><a href="klasik/">Versi klasik</a>: denah sekolah asli dengan Mode guru lama.</p>`);
 
   function choose(m: MapDef) {
     chosen = m;
     history.replaceState(null, "", `?map=${encodeURIComponent(m.id)}${m === preview ? "&preview=1" : ""}`);
     $("pickMap").hidden = true; $("groupStep").hidden = false;
+    setStep(2);
     $("chosenName").textContent = m.name;
+    $("chosenMeta").textContent = `${m.posts.length} pos · ${m.cols}×${m.rows} petak${m.place?.name ? ` · ${m.place.name}` : ""}`;
+    $("chosenThumb").replaceChildren(minimap(m, 3));
     const saved = loadProgress(m);
     $("resumeBox").hidden = !saved;
     if (saved) {
@@ -96,7 +168,17 @@ export function initStart(begin: (m: MapDef, S: GroupState) => void, mode: ViewM
     setTimeout(() => (saved ? $("resumeBtn") : $("gname")).focus(), 30);
   }
 
-  $("changeMap").onclick = () => { history.replaceState(null, "", location.pathname); $("groupStep").hidden = true; $("pickMap").hidden = false; };
+  function setStep(n: 1 | 2) {
+    $("stepMap").toggleAttribute("aria-current", false); $("stepGroup").toggleAttribute("aria-current", false);
+    $(n === 1 ? "stepMap" : "stepGroup").setAttribute("aria-current", "step");
+    $("stepMap").classList.toggle("done", n === 2);
+    $("startOv").querySelector(".sheet")!.classList.toggle("narrow", n === 2);
+  }
+  $("changeMap").onclick = () => {
+    history.replaceState(null, "", location.pathname);
+    $("groupStep").hidden = true; $("pickMap").hidden = false; setStep(1);
+    redrawPins();
+  };
   $("newBtn").onclick = () => { $("resumeBox").hidden = true; $("gname").focus(); };
   $("startForm").addEventListener("submit", (e) => {
     e.preventDefault();
