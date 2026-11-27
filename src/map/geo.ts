@@ -30,3 +30,27 @@ export function groupPins<T extends PinItem>(items: T[]): T[][] {
   }
   return [...groups.values()];
 }
+
+/** Great-circle distance in km (haversine). */
+export function distanceKm(a: PinItem, b: PinItem): number {
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** "350 m", "1,2 km", "12 km" (Indonesian decimal comma). */
+export function formatDistance(km: number): string {
+  if (km < 1) return `${Math.max(10, Math.round(km * 100) * 10)} m`;
+  if (km < 10) return `${km.toFixed(1).replace(".", ",")} km`;
+  return `${Math.round(km).toLocaleString("id-ID")} km`;
+}
+
+/** The item closest to `at`, with its distance; null for an empty list. */
+export function nearest<T extends PinItem>(items: T[], at: PinItem): { item: T; km: number } | null {
+  let best: { item: T; km: number } | null = null;
+  for (const item of items) {
+    const km = distanceKm(at, item);
+    if (!best || km < best.km) best = { item, km };
+  }
+  return best;
+}

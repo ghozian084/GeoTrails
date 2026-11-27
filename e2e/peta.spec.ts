@@ -301,6 +301,20 @@ test("Jelajah: guru memasang lokasi peta, siswa melihat pin dan memainkannya dal
   await card.getByRole("button", { name: "Main RPG 2D" }).click();
   await expect(page.locator("#chosenName")).toHaveText(map.name);
 
+  // "Dekat saya": the device location (faked) shows the nearest trail; nothing about it is stored.
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ latitude: -6.986, longitude: 110.41 });
+  await page.goto("/");
+  await expect(page.locator("#publicStatus")).toContainText("Klik pin");
+  await page.click("#exploreNear");
+  await expect(page.locator("#publicStatus")).toContainText("Trail terdekat: Taman Kota Semarang (± 160 m).");
+  await expect(page.locator("#publicStatus")).toContainText("tidak disimpan dan tidak dikirim");
+  await expect(page.locator("#exploreMap .wme")).toBeVisible();
+  await expect(card).toContainText(map.name);
+  const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }));
+  expect(stored).not.toContain("110.41,");
+  expect(stored).not.toContain("-6.986");
+
   // "Main Blox 3D" opens the 3D page with the map.
   await page.goto("/");
   await page.locator('#exploreMap .leaflet-marker-icon[title^="Semesta"]').click();

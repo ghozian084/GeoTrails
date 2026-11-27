@@ -74,6 +74,8 @@
 .pl-map:not(.leaflet-container){display:grid;place-content:center;padding:12px;text-align:center}
 .explore-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
 .explore-legend span{display:inline-flex;align-items:center;gap:6px}
+.explore-legend #exploreNear{margin-left:auto;padding:4px 10px;font-size:14px}
+.wme{border-radius:50%;background:#2F7DE1;border:3px solid #fff;box-shadow:0 0 0 6px rgba(47,125,225,.25),0 1px 3px rgba(0,0,0,.4)}
 .explore-legend .wpin{position:relative;display:inline-block;width:12px;height:12px}
 .wpin{--pin:var(--lock);width:26px;height:26px}
 .wpin::before{content:"";position:absolute;inset:0;background:var(--pin);border:2px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 4px rgba(0,0,0,.35)}

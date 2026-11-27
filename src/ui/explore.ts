@@ -1,7 +1,7 @@
 import { cachePublicMap, classMaps, joinedSession, publicMaps } from "../cloud/cache";
 import { cloudEnabled, loadPublic } from "../cloud/config";
 import type { PublicSummary } from "../cloud/publicmaps";
-import { groupPins } from "../map/geo";
+import { formatDistance, groupPins, nearest } from "../map/geo";
 import type { MapDef } from "../map/mapdef";
 import { minimap } from "../map/minimap";
 import { studentMaps } from "../map/store";
@@ -16,6 +16,8 @@ import type { PinKind, WorldMap, WorldPin } from "./worldmap";
  * place, posts, mini plan) and "Main RPG 2D" / "Main Blox 3D". Pins: green = public, yellow = the
  * joined class or session, grey = saved on this device. The approved public maps are also listed
  * below the map, as a fallback for slow phones and maps without a location.
+ * "Dekat saya" asks the browser for the device's location once, shows it on the map with the
+ * nearest trail, and forgets it: the location is never stored or sent.
  */
 
 /** "" = keep the view of the current page. */
@@ -53,7 +55,8 @@ export function initExplore(parent: HTMLElement, onPlay: (m: MapDef, mode: PlayM
     <small id="publicStatus" aria-live="polite">Temukan trail di peta dunia, lalu main dalam RPG 2D atau Blox 3D.</small>
     <div class="explore-wrap" id="exploreWrap" hidden>
       <div class="explore-map" id="exploreMap" aria-label="Peta Jelajah"></div>
-      <div class="explore-legend">${(["public", "class", "device"] as PinKind[]).map((k) => `<span><i class="wpin wpin-${k}"></i>${KIND_LABEL[k]}</span>`).join("")}</div>
+      <div class="explore-legend">${(["public", "class", "device"] as PinKind[]).map((k) => `<span><i class="wpin wpin-${k}"></i>${KIND_LABEL[k]}</span>`).join("")}
+        <button type="button" class="btn ghost" id="exploreNear"${"geolocation" in navigator ? "" : " hidden"}>Dekat saya</button></div>
       <div class="explore-card" id="exploreCard" hidden></div>
     </div>
     <div class="public-list" id="publicList"></div>`;
@@ -136,6 +139,22 @@ export function initExplore(parent: HTMLElement, onPlay: (m: MapDef, mode: PlayM
       + (cloudEnabled && !remote.length ? " Belum ada peta publik." : ""));
   }
 
+  $("exploreNear").onclick = () => {
+    if (!world) return;
+    status("Mencari lokasimu…");
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const at = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      const best = nearest(groups.map((g, i) => ({ lat: g[0].lat, lng: g[0].lng, i })), at);
+      world?.here(at.lat, at.lng, best?.item);
+      if (best) showCard(best.item.i);
+      status((best ? `Trail terdekat: ${groups[best.item.i][0].place} (± ${formatDistance(best.km)}).` : "Belum ada trail dengan lokasi.")
+        + " Lokasimu hanya tampil di layar ini, tidak disimpan dan tidak dikirim.");
+    }, (err) => {
+      status(err.code === err.PERMISSION_DENIED
+        ? "Izin lokasi ditolak. Geser dan perbesar peta untuk mencari trail di dekatmu."
+        : "Lokasi tidak bisa dibaca. Coba lagi, atau geser peta sendiri.");
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  };
   $("publicOpen").onclick = () => void open(true);
   $("exploreHide").onclick = () => {
     setHiddenPref(true);

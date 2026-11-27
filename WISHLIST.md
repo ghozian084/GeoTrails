@@ -18,7 +18,8 @@ Ide fitur berikutnya, urut dari yang paling bermanfaat. Centang bila sudah seles
   - Tahapan:
     - [x] 1. Data lokasi peta (lat, lng, nama tempat), isian pin di editor, aturan keamanan untuk kolom baru.
     - [x] 2. Layar Jelajah: peta + pin + kartu trail (tampilan utama layar mulai, terbuka sendiri saat online; daftar peta tetap sebagai cadangan).
-    - [ ] 3. Tombol "Dekat saya", lalu titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
+    - [x] 3a. Tombol "Dekat saya": lokasi perangkat dan trail terdekat beserta jaraknya (lokasi tidak disimpan dan tidak dikirim).
+    - [ ] 3b. Titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
 
 ## Dunia bersama ala Roblox
 - [ ] **Server dunia terbuka**: siswa dari kelas dan sekolah mana pun masuk ke dunia 3D yang sama dan saling berinteraksi secara realtime, tidak hanya melihat avatar.

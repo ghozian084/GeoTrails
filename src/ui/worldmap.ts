@@ -4,8 +4,8 @@ import "leaflet/dist/leaflet.css";
 /*
  * Real-world map for the Jelajah screen and the teacher's pin picker (Leaflet, bundled from npm).
  * The only part of GeoTrails that loads from the internet at runtime: OpenStreetMap tiles, and only
- * once this module is opened. Pins are plain CSS markers (no image files). Nothing about the
- * viewer's location is read, stored or sent.
+ * once this module is opened. Pins are plain CSS markers (no image files). The viewer's location is
+ * only shown when "Dekat saya" is pressed (`here`), and is never stored or sent.
  */
 
 export type PinKind = "public" | "class" | "device";
@@ -25,6 +25,8 @@ export interface WorldMap {
   /** Teacher's picker: one movable pin; clicks or drags call back with the new spot. */
   picker(at: { lat: number; lng: number } | null, onMove: (lat: number, lng: number) => void): void;
   focus(lat: number, lng: number, zoom?: number): void;
+  /** "Dekat saya": a dot at the viewer's spot, framed together with the nearest trail. */
+  here(lat: number, lng: number, near?: { lat: number; lng: number }): void;
   resize(): void;
   destroy(): void;
 }
@@ -34,7 +36,7 @@ export function createWorldMap(el: HTMLElement, center: [number, number] = [-2.5
   const map = L.map(el, { center, zoom, worldCopyJump: true, zoomControl: true, keyboard: false });
   L.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIB }).addTo(map);
   let layer = L.layerGroup().addTo(map);
-  let pick: L.Marker | null = null;
+  let pick: L.Marker | null = null, me: L.Marker | null = null;
 
   return {
     setPins(pins, onPick) {
@@ -53,6 +55,12 @@ export function createWorldMap(el: HTMLElement, center: [number, number] = [-2.5
       map.on("click", (e: L.LeafletMouseEvent) => { put(e.latlng.lat, e.latlng.lng); onMove(e.latlng.lat, e.latlng.lng); });
     },
     focus(lat, lng, z = 16) { map.setView([lat, lng], z); },
+    here(lat, lng, near) {
+      me?.remove();
+      me = L.marker([lat, lng], { icon: L.divIcon({ className: "wme", iconSize: [18, 18] }), title: "Lokasimu", alt: "Lokasimu", interactive: false, keyboard: false }).addTo(map);
+      if (near) map.fitBounds(L.latLngBounds([[lat, lng], [near.lat, near.lng]]).pad(0.3), { maxZoom: 16, animate: false });
+      else map.setView([lat, lng], 14, { animate: false });
+    },
     resize() { map.invalidateSize(); },
     destroy() { map.remove(); },
   };

@@ -60,6 +60,7 @@ Terakhir diperbarui: 18 November 2026, setelah PR #26.
 | #24 | Jelajah ala MathCityMap sebagai tampilan utama layar mulai: peta dunia OpenStreetMap dengan pin trail, kartu trail lalu Main RPG 2D/Blox 3D; guru mengisi "Lokasi di Jelajah" di editor |
 | #25 | `RINGKASAN.md` dan perintah `/ringkasan` |
 | #26 | Menu utama lebih nyaman: halaman penuh dua kolom (Jelajah kiri, kode dan daftar peta kanan), kartu "Lanjutkan petualangan" sekali klik, "Cara bermain" bisa dilipat, langkah 1–2, pratinjau avatar |
+| (cabang) | Jelajah tahap 3a: tombol "Dekat saya" menampilkan lokasi perangkat dan trail terdekat beserta jaraknya; lokasi tidak disimpan dan tidak dikirim |
 
 ## 5. Keputusan Bapak yang perlu diingat
 - **Hasil kelompok** hanya dikirim di dalam sesi trail yang dibuat guru, dengan kode sesi sendiri (tidak sama dengan kode kelas). Isinya hasil + jawaban angka, dan tersimpan sampai guru menghapus sesi.
@@ -69,11 +70,12 @@ Terakhir diperbarui: 18 November 2026, setelah PR #26.
   - Sumber peta OpenStreetMap: online memakai peta, offline memakai daftar.
   - Ini pengecualian yang disetujui untuk aturan "tanpa CDN"; nama OSM wajib tampil di pojok peta.
   - Jelajah menjadi tampilan utama layar mulai.
+  - "Dekat saya" dikerjakan dulu (tahap 3a); titik nyata per pos menyusul.
 - **Pin Basic** di koordinat -7.04, 110.356 (disetujui Bapak).
 
 ## 6. Yang belum dikerjakan
 Lihat `WISHLIST.md` untuk daftar lengkap. Yang paling dekat:
-- Jelajah tahap 3: tombol "Dekat saya", lalu titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
+- Jelajah tahap 3b: titik nyata per pos sebagai jembatan ke trail fisik (GPS/QR).
 - QR code untuk trail fisik (kartu QR per pos).
 - Analisis kesalahan: pos yang paling sering salah dan kesalahan umum. Datanya sudah tersedia dari hasil sesi.
 - Bahasa Inggris (tombol ID/EN).
